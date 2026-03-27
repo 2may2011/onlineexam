@@ -2,27 +2,7 @@
 CREATE DATABASE IF NOT EXISTS online_exam_portal;
 USE online_exam_portal;
 
--- Student Groups (Must be created before students)
-CREATE TABLE IF NOT EXISTS `groups` (
-    group_id INT AUTO_INCREMENT PRIMARY KEY,
-    group_name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table for storing student information
-CREATE TABLE IF NOT EXISTS students (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NULL,
-    student_id VARCHAR(50) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    gender ENUM('M', 'F'),
-    group_id INT NULL,
-    FOREIGN KEY (group_id) REFERENCES `groups`(group_id) ON DELETE SET NULL
-);
-
+-- 1. Admins
 CREATE TABLE IF NOT EXISTS admins (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(150) NOT NULL UNIQUE,
@@ -31,22 +11,60 @@ CREATE TABLE IF NOT EXISTS admins (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table for storing application settings (EmailJS, etc.)
+-- 2. Settings (Includes SMTP and Prefix settings)
 CREATE TABLE IF NOT EXISTS settings (
     setting_key VARCHAR(50) PRIMARY KEY,
     setting_value TEXT
 );
 
--- Question Banks Table
+-- 3. Student ID Prefixes
+CREATE TABLE IF NOT EXISTS student_prefixes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prefix_name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Student Groups (Groups managed by admin)
+CREATE TABLE IF NOT EXISTS `groups` (
+    group_id INT AUTO_INCREMENT PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Students (Normalized Student ID + Prefix)
+CREATE TABLE IF NOT EXISTS students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prefix_id INT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    studentid VARCHAR(50) NOT NULL, -- Only numeric part
+    password VARCHAR(255) NULL,
+    gender ENUM('M', 'F') NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (prefix_id) REFERENCES student_prefixes(id) ON DELETE SET NULL
+);
+
+-- 6. Student Group Mapping (Pivot Table)
+CREATE TABLE IF NOT EXISTS student_groups (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    group_id INT NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES `groups`(group_id) ON DELETE CASCADE,
+    UNIQUE KEY (student_id, group_id)
+);
+
+-- 7. Question Banks
 CREATE TABLE IF NOT EXISTS question_banks (
     bank_id INT AUTO_INCREMENT PRIMARY KEY,
     bank_name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Questions Table
+-- 8. Questions
 CREATE TABLE IF NOT EXISTS questions (
     question_id INT AUTO_INCREMENT PRIMARY KEY,
     bank_id INT NOT NULL,
@@ -61,7 +79,7 @@ CREATE TABLE IF NOT EXISTS questions (
     FOREIGN KEY (bank_id) REFERENCES question_banks(bank_id) ON DELETE CASCADE
 );
 
--- Exams Table
+-- 9. Exams
 CREATE TABLE IF NOT EXISTS exams (
     exam_id INT AUTO_INCREMENT PRIMARY KEY,
     bank_id INT NOT NULL,
@@ -80,8 +98,7 @@ CREATE TABLE IF NOT EXISTS exams (
     FOREIGN KEY (group_id) REFERENCES `groups`(group_id) ON DELETE SET NULL
 );
 
-
--- Exam Submissions
+-- 10. Exam Submissions
 CREATE TABLE IF NOT EXISTS exam_submissions (
     submission_id INT AUTO_INCREMENT PRIMARY KEY,
     exam_id INT NOT NULL,
@@ -95,7 +112,7 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
--- Student Answers (Stores attempt details and randomized state)
+-- 11. Student Answers
 CREATE TABLE IF NOT EXISTS student_answers (
     answer_id INT AUTO_INCREMENT PRIMARY KEY,
     submission_id INT NOT NULL,
@@ -103,7 +120,6 @@ CREATE TABLE IF NOT EXISTS student_answers (
     selected_option CHAR(1) NULL,
     is_correct TINYINT DEFAULT 0,
     marks FLOAT DEFAULT 0,
-    -- Store randomized order info for the student if needed, or just the choice
     FOREIGN KEY (submission_id) REFERENCES exam_submissions(submission_id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
 );

@@ -54,9 +54,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_password'])) {
 
 // Fetch Profile Info for Display
 $stmt = $conn->prepare("
-    SELECT s.*, g.group_name 
+    SELECT s.*, p.prefix_name, (SELECT g.group_name FROM student_groups sg JOIN `groups` g ON sg.group_id = g.group_id WHERE sg.student_id = s.id LIMIT 1) as group_name 
     FROM students s 
-    LEFT JOIN `groups` g ON s.group_id = g.group_id 
+    LEFT JOIN student_prefixes p ON s.prefix_id = p.id
     WHERE s.id = ?
 ");
 $stmt->bind_param("i", $student_id);
@@ -71,11 +71,11 @@ $profile = $stmt->get_result()->fetch_assoc();
             <div class="card-body text-center p-4">
                 <div class="mb-3">
                     <div class="d-inline-flex bg-primary bg-opacity-10 text-primary rounded-circle align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                        <span class="fs-1 fw-bold"><?= strtoupper(substr($profile['full_name'], 0, 1)) ?></span>
+                        <span class="fs-1 fw-bold"><?= strtoupper(substr($profile['name'], 0, 1)) ?></span>
                     </div>
                 </div>
-                <h5 class="fw-bold mb-1"><?= htmlspecialchars($profile['full_name']) ?></h5>
-                <p class="text-muted small mb-3"><?= htmlspecialchars($profile['student_id']) ?></p>
+                <h5 class="fw-bold mb-1"><?= htmlspecialchars($profile['name']) ?></h5>
+                <p class="text-muted small mb-3"><?= htmlspecialchars(($profile['prefix_name'] ?? '') . $profile['studentid']) ?></p>
                 
                 <hr class="my-4 opacity-10">
                 
@@ -180,7 +180,7 @@ $profile = $stmt->get_result()->fetch_assoc();
 
 <style>
     .cursor-pointer { cursor: pointer; }
-    .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .bg-soft-primary { background-color: rgba(255, 184, 0, 0.1); color: #FFB800; }
     .valid-rule { color: #198754; font-weight: 600; }
     .valid-rule i { class-name: "bi bi-check-circle-fill"; } /* Handled in JS replacement */
 </style>

@@ -1,5 +1,5 @@
 <?php
-// admin/includes/auth.php
+// manage/includes/auth.php
 declare(strict_types=1);
 
 function start_secure_session(): void

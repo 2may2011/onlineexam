@@ -1,5 +1,5 @@
 <?php
-// admin/pages/scores.php
+// manage/pages/scores.php
 // Updated to show Exam Summaries by default, and Individual Student scores ONLY when filtered by an exam.
 
 $exam_filter = isset($_GET['exam_id']) ? (int)$_GET['exam_id'] : 0;
@@ -14,10 +14,11 @@ $res_exams_list = mysqli_query($conn, $q_exams_list);
 
 if ($exam_filter) {
     // --- DETAILED VIEW (Individual Students) ---
-    $q_scores = "SELECT s.*, e.title as exam_title, e.passing_marks, st.full_name, st.student_id as stud_code
+    $q_scores = "SELECT s.*, e.title as exam_title, e.passing_marks, st.name, CONCAT(COALESCE(p.prefix_name,''), st.studentid) as stud_code
                  FROM exam_submissions s 
                  JOIN exams e ON s.exam_id = e.exam_id 
                  JOIN students st ON s.student_id = st.id 
+                 LEFT JOIN student_prefixes p ON st.prefix_id = p.id
                  WHERE s.status = 'submitted' AND s.exam_id = $exam_filter
                  ORDER BY s.score DESC";
     $res_scores = mysqli_query($conn, $q_scores);
@@ -44,12 +45,12 @@ if ($exam_filter) {
 <div class="card p-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <h5 class="mb-0 fw-bold">
+            <h3 class="fw-bold mb-0">
                 <?= ($view_mode === 'detail') ? 'Results: ' . htmlspecialchars($exam_title_header) : 'Examination Reports' ?>
-            </h5>
-            <p class="small text-muted mb-0">
-                <?= ($view_mode === 'detail') ? 'Individual student performance list.' : 'Overview of all conducted examinations.' ?>
-            </p>
+            </h3>
+            <div class="text-muted small">
+                <?= ($view_mode === 'detail') ? 'Detailed individual student performance and scoring' : 'Overview and performance analysis of all conducted examinations' ?>
+            </div>
         </div>
         <div class="d-flex gap-2">
             <?php if($view_mode === 'detail'): ?>
@@ -128,7 +129,7 @@ if ($exam_filter) {
                     <!-- DETAIL ROW LOOP -->
                     <?php if(mysqli_num_rows($res_scores) > 0): while($s = mysqli_fetch_assoc($res_scores)): ?>
                     <tr>
-                        <td class="fw-bold"><?= htmlspecialchars($s['full_name']) ?></td>
+                        <td class="fw-bold"><?= htmlspecialchars($s['name']) ?></td>
                         <td class="small muted"><?= htmlspecialchars($s['stud_code']) ?></td>
                         <td>
                             <span class="fw-bold <?= ($s['score'] >= $s['passing_marks']) ? 'text-success' : 'text-danger' ?>">

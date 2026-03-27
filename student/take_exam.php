@@ -12,9 +12,9 @@ if (!$exam_id) { header("Location: index.php?view=exams"); exit; }
 
 // 1. Verify Exam and Participation (via Group)
 $q_exam = "SELECT e.*, qb.bank_name FROM exams e 
-           JOIN students s ON e.group_id = s.group_id
            JOIN question_banks qb ON e.bank_id = qb.bank_id
-           WHERE e.exam_id = $exam_id AND s.id = $student_id LIMIT 1";
+           JOIN exam_assignments ea ON e.exam_id = ea.exam_id
+           WHERE e.exam_id = $exam_id AND ea.student_id = $student_id LIMIT 1";
 $res_exam = mysqli_query($conn, $q_exam);
 $exam = mysqli_fetch_assoc($res_exam);
 
@@ -93,15 +93,23 @@ $timeLeft = $end - time();
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
-    body { background:#f1f5f9; user-select: none; }
-    .exam-header { background: #1e293b; color: white; padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
-    .timer { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.5rem; color: #fbbf24; }
+    :root {
+      --theme-primary: #FFB800;
+      --theme-bg: #E5E8EF;
+      --theme-shade: #002583;
+    }
+    body { background: var(--theme-bg); user-select: none; }
+    .exam-header { background: var(--theme-shade); color: white; padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
+    .timer { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.5rem; color: #FFB800; }
     .question-card { border: 0; border-radius: 12px; transition: all 0.3s; margin-bottom: 2rem; }
     .question-card.answered { opacity: 0.85; pointer-events: none; border-left: 4px solid #10b981; }
     .option-btn { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px; cursor: pointer; transition: 0.2s; background: white; }
-    .option-btn:hover { background: #f8fafc; border-color: #3b82f6; }
-    .option-btn.selected { background: #3b82f6; border-color: #3b82f6; color: white; }
+    .option-btn:hover { background: #f8fafc; border-color: var(--theme-shade); }
+    .option-btn.selected { background: var(--theme-shade); border-color: var(--theme-shade); color: white; }
     .option-radio { display: none; }
+    .btn-primary { background-color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; color: #002583 !important; font-weight: 600; }
+    .btn-primary:hover { background-color: #D99E00 !important; border-color: #D99E00 !important; }
+    .badge.bg-primary { background-color: var(--theme-shade) !important; }
   </style>
 </head>
 <body>
@@ -213,7 +221,7 @@ $timeLeft = $end - time();
             text: "Are you sure you want to end your examination session?",
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#2563eb',
+            confirmButtonColor: '#FFB800',
             confirmButtonText: 'Yes, Submit'
         }).then((result) => {
             if (result.isConfirmed) submitFinal();

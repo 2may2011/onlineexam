@@ -1,5 +1,5 @@
 <?php
-// admin/login.php
+// manage/login.php
 declare(strict_types=1);
 
 require_once __DIR__ . "/includes/auth.php";
@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       $_SESSION["admin_username"] = $row["email"];
       $_SESSION["LAST_ACTIVITY"] = time();
 
-      header("Location: index.php?view=dashboard");
+      header("Location: index.php?view=dashboard&status=login_success");
       exit;
     } else {
       $error = "Invalid email or password.";
@@ -48,14 +48,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Login • Online Exam Portal</title>
+  <title>Manage Login • Online Exam Portal</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
   <style>
-    body { background:#f6f7fb; }
-    .card { border:0; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.06); }
+    :root {
+      --theme-primary: #FFB800;
+      --theme-bg: #E5E8EF;
+      --theme-shade: #002583;
+      --bs-primary: #FFB800;
+      --bs-primary-rgb: 255, 184, 0;
+    }
+    body { background: var(--theme-bg); }
+    .card { 
+        border:0; 
+        border-radius:16px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,.06); 
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        animation: cardAppear 0.5s ease-out forwards;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,.08); }
+    
+    @keyframes cardAppear {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .btn, .form-control { transition: all 0.2s ease; }
+    .btn-primary { background-color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; color: #002583 !important; font-weight: 600; }
+    .btn-primary:hover { background-color: #D99E00 !important; border-color: #D99E00 !important; }
+    .text-primary { color: var(--theme-primary) !important; }
+    .form-control:focus { box-shadow: 0 0 0 4px rgba(255, 184, 0, 0.2); border-color: var(--theme-primary); }
   </style>
 </head>
 <body>
@@ -66,16 +91,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <div class="text-center mb-3">
         <i class="bi bi-shield-lock fs-1 text-primary"></i>
         <div class="fw-bold fs-4">Online Exam Portal</div>
-        <div class="text-secondary">Admin Login</div>
+        <div class="text-secondary">Manage Login</div>
       </div>
 
       <div class="card p-4">
+        <?php if (isset($_GET['success'])): ?>
+            <div class="alert alert-success alert-dismissible fade show small mb-4" role="alert">
+                <?= htmlspecialchars($_GET['success']) ?>
+                <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+            </div>
+        <?php endif; ?>
+
         <?php if ($info): ?>
-          <div class="alert alert-info"><?= htmlspecialchars($info) ?></div>
+          <div class="alert alert-info alert-dismissible fade show small mb-4" role="alert">
+            <?= htmlspecialchars($info) ?>
+            <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+          </div>
         <?php endif; ?>
 
         <?php if ($error): ?>
-          <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+          <div class="alert alert-danger alert-dismissible fade show small mb-4" role="alert">
+            <?= htmlspecialchars($error) ?>
+            <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+          </div>
         <?php endif; ?>
 
         <form method="post" autocomplete="off">

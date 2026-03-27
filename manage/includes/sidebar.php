@@ -1,5 +1,5 @@
 <?php
-// admin/includes/sidebar.php
+// manage/includes/sidebar.php
 // Set $activeView before include: dashboard|banks|questions|students|exams|live|scores
 
 $activeView = $activeView ?? "dashboard";
@@ -16,7 +16,7 @@ function navActive(string $view, string $activeView): string {
       <i class="bi bi-shield-lock fs-4 text-primary"></i>
       <div>
         <div class="brand">Online Exam Portal</div>
-        <div class="small text-secondary">Admin Panel</div>
+        <div class="small text-secondary">Manage Panel</div>
       </div>
     </div>
 
@@ -44,6 +44,9 @@ function navActive(string $view, string $activeView): string {
       </a>
       <a class="nav-link <?= navActive("scores",$activeView) ?>" href="index.php?view=scores">
         <i class="bi bi-bar-chart-line me-2"></i>Scores
+      </a>
+      <a class="nav-link <?= navActive("settings",$activeView) ?>" href="index.php?view=settings">
+        <i class="bi bi-gear me-2"></i>Settings
       </a>
 
     </nav>
@@ -87,17 +90,17 @@ function navActive(string $view, string $activeView): string {
   <div class="content">
     <nav class="navbar navbar-light bg-white border-bottom sticky-top d-lg-none">
       <div class="container-fluid">
-        <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav">
+        <button class="btn" style="color: var(--theme-primary, #FFB800); border-color: var(--theme-primary, #FFB800);" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav">
           <i class="bi bi-list"></i>
         </button>
-        <div class="fw-semibold">Online Exam Portal • Admin</div>
+        <div class="fw-semibold">Online Exam Portal • Manage</div>
         <a class="btn btn-outline-secondary" href="logout.php"><i class="bi bi-box-arrow-left"></i></a>
       </div>
     </nav>
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNav">
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Admin Menu</h5>
+        <h5 class="offcanvas-title">Manage Menu</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
@@ -110,6 +113,7 @@ function navActive(string $view, string $activeView): string {
           <a class="list-group-item list-group-item-action <?= navActive("exams",$activeView) ?>" href="index.php?view=exams">Exams</a>
           <a class="list-group-item list-group-item-action <?= navActive("live",$activeView) ?>" href="index.php?view=live">Live Exams</a>
           <a class="list-group-item list-group-item-action <?= navActive("scores",$activeView) ?>" href="index.php?view=scores">Scores</a>
+          <a class="list-group-item list-group-item-action <?= navActive("settings",$activeView) ?>" href="index.php?view=settings">Settings</a>
         </div>
       </div>
     </div>

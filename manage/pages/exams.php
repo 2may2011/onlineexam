@@ -1,5 +1,5 @@
 <?php
-// admin/pages/exams.php
+// manage/pages/exams.php
 
 // --- PHP HANDLERS ---
 
@@ -53,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_exam'])) {
             // If group_id changed or re-selected, we should ensure those students are assigned
             // We do INSERT IGNORE to avoid duplicates
             if ($group_id > 0) {
-                 mysqli_query($conn, "INSERT IGNORE INTO exam_assignments (exam_id, student_id) SELECT $exam_id, id FROM students WHERE group_id = $group_id");
+                 mysqli_query($conn, "INSERT IGNORE INTO exam_assignments (exam_id, student_id) SELECT $exam_id, student_id FROM student_groups WHERE group_id = $group_id");
             } else {
                  // All Students
                  mysqli_query($conn, "INSERT IGNORE INTO exam_assignments (exam_id, student_id) SELECT $exam_id, id FROM students");
@@ -76,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_exam'])) {
             
             // Assign Students
             if ($group_id > 0) {
-                mysqli_query($conn, "INSERT INTO exam_assignments (exam_id, student_id) SELECT $new_exam_id, id FROM students WHERE group_id = $group_id");
+                mysqli_query($conn, "INSERT INTO exam_assignments (exam_id, student_id) SELECT $new_exam_id, student_id FROM student_groups WHERE group_id = $group_id");
             } else {
                 // All Students
                 mysqli_query($conn, "INSERT INTO exam_assignments (exam_id, student_id) SELECT $new_exam_id, id FROM students");
@@ -135,9 +135,17 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
 ?>
 
 <?php if (isset($_GET['success'])): ?>
-<script>
-    Swal.fire({ icon: 'success', title: 'Success', text: '<?= htmlspecialchars($_GET['success']) ?>', timer: 2000, showConfirmButton: false });
-</script>
+    <div class="alert alert-success alert-dismissible fade show small mb-3" role="alert">
+        <?= htmlspecialchars($_GET['success']) ?>
+        <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($db_error)): ?>
+    <div class="alert alert-danger alert-dismissible fade show small mb-3" role="alert">
+        <?= htmlspecialchars($db_error) ?>
+        <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+    </div>
 <?php endif; ?>
 
 <div class="row g-3">
@@ -145,8 +153,8 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
     <div class="card p-3">
       <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
         <div>
-          <div class="fw-semibold">Exams</div>
-          <div class="muted small">Create and manage scheduled examinations</div>
+          <h3 class="fw-bold mb-0">Exam Management</h3>
+          <div class="text-muted small">Schedule and manage examinations settings and timings</div>
         </div>
         <button class="btn btn-primary" onclick="openAddExamModal()">
           <i class="bi bi-plus-lg me-1"></i> Create Exam

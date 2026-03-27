@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Please enter a valid email address.";
     } else {
         // 1. Check if student exists
-        $stmt = $conn->prepare("SELECT id, full_name FROM students WHERE email = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, name FROM students WHERE email = ? LIMIT 1");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -40,15 +40,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $mailer = new Mailer($conn);
                 $subject = "Password Reset - Online Exam Portal";
                 $body = "
-                    Hello {$student['full_name']},<br><br>
+                    Hello {$student['name']},<br><br>
                     your password has been reset successfully<br><br>
                     your new password: <strong>{$plainPass}</strong><br><br>
                     Please login and change if needed.<br>
                     Regards,<br>
                     Online Exam Portal
                 ";
-
-                $result = $mailer->send($email, $student['full_name'], $subject, $body);
+                $student_name = $student['name'];
+                $result = $mailer->send($email, $student_name, $subject, $body);
 
                 if ($result['success']) {
                      // Invalidate session to force re-login
@@ -79,12 +79,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { background: #f6f7fb; font-family: 'Inter', sans-serif; height: 100vh; display: flex; align-items: center; }
+    :root {
+      --theme-primary: #FFB800;
+      --theme-bg: #E5E8EF;
+      --theme-shade: #002583;
+      --bs-primary: #FFB800;
+      --bs-primary-rgb: 255, 184, 0;
+    }
+    body { background: var(--theme-bg); font-family: 'Inter', sans-serif; height: 100vh; display: flex; align-items: center; }
     .login-card { border: 0; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; max-width: 450px; width: 100%; margin: auto; }
-    .card-header { background: #111827; color: white; padding: 40px 20px; text-align: center; border:0; }
-    .btn-primary { background: #2563eb; border: 0; padding: 12px; font-weight: 600; border-radius: 12px; }
+    .card-header { background: var(--theme-shade); color: white; padding: 40px 20px; text-align: center; border:0; }
+    .btn-primary { background: var(--theme-primary); border: 0; padding: 12px; font-weight: 600; border-radius: 12px; color: #002583; }
+    .btn-primary:hover { background: #D99E00; }
+    .btn-outline-primary { color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; }
+    .btn-outline-primary:hover { background-color: var(--theme-primary) !important; color: #002583 !important; }
+    .text-primary { color: var(--theme-primary) !important; }
     .form-control { padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; }
-    .form-control:focus { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); border-color: #2563eb; }
+    .form-control:focus { box-shadow: 0 0 0 4px rgba(255, 184, 0, 0.2); border-color: var(--theme-primary); }
   </style>
 </head>
 <body>

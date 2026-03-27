@@ -11,11 +11,19 @@ if (is_student_logged_in()) {
 
 $error = "";
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = trim($_POST['email']);
+    $identifier = trim($_POST['identifier']);
     $password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT id, full_name, password FROM students WHERE email = ? LIMIT 1");
-    $stmt->bind_param("s", $email);
+    // Try Email first, then Student ID (Prefix + ID)
+    $stmt = $conn->prepare("
+        SELECT s.id, s.name, s.password 
+        FROM students s
+        LEFT JOIN student_prefixes p ON s.prefix_id = p.id
+        WHERE s.email = ? 
+        OR CONCAT(COALESCE(p.prefix_name, ''), s.studentid) = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param("ss", $identifier, $identifier);
     $stmt->execute();
     $res = $stmt->get_result();
 
@@ -23,12 +31,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (password_verify($password, $student['password'])) {
             $_SESSION['student_logged_in'] = true;
             $_SESSION['student_id'] = $student['id'];
-            $_SESSION['student_name'] = $student['full_name'];
+            $_SESSION['student_name'] = $student['name'];
             header("Location: index.php");
             exit;
         }
     }
-    $error = "Invalid email or password.";
+    $error = "Invalid credentials. Check your ID/Email and Password.";
 }
 ?>
 <!doctype html>
@@ -41,14 +49,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { background: #f6f7fb; font-family: 'Inter', sans-serif; height: 100vh; display: flex; align-items: center; }
+    :root {
+      --theme-primary: #FFB800;
+      --theme-bg: #E5E8EF;
+      --theme-shade: #002583;
+      --bs-primary: #FFB800;
+      --bs-primary-rgb: 255, 184, 0;
+    }
+    body { background: var(--theme-bg); font-family: 'Inter', sans-serif; height: 100vh; display: flex; align-items: center; }
     .login-card { border: 0; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; max-width: 450px; width: 100%; margin: auto; }
-    .card-header { background: #111827; color: white; padding: 40px 20px; text-align: center; border:0; }
-    .btn-primary { background: #2563eb; border: 0; padding: 12px; font-weight: 600; border-radius: 12px; }
+    .card-header { background: var(--theme-shade); color: white; padding: 40px 20px; text-align: center; border:0; }
+    .btn-primary { background: var(--theme-primary); border: 0; padding: 12px; font-weight: 600; border-radius: 12px; color: #002583; }
+    .btn-primary:hover { background: #D99E00; }
     .form-control { padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; }
-    .form-control:focus { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); border-color: #2563eb; }
+    .form-control:focus { box-shadow: 0 0 0 4px rgba(255, 184, 0, 0.2); border-color: var(--theme-primary); }
     .input-group-text { background: transparent; border-color: #e5e7eb; border-radius: 0 10px 10px 0; cursor: pointer; }
     .form-control.has-toggle { border-right: 0; }
+    .text-primary { color: var(--theme-primary) !important; }
   </style>
 </head>
 <body>
@@ -64,8 +81,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <?php endif; ?>
       <form method="POST">
         <div class="mb-3">
-          <label class="form-label small fw-bold">Email Address</label>
-          <input type="email" name="email" class="form-control" placeholder="yourname@example.com" required>
+          <label class="form-label small fw-bold">Email / Student ID</label>
+          <input type="text" name="identifier" class="form-control" placeholder="your-id or email@example.com" required>
         </div>
         <div class="mb-4">
           <label class="form-label small fw-bold">Password</label>

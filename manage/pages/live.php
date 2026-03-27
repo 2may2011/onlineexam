@@ -1,5 +1,5 @@
 <?php
-// admin/pages/live.php
+// manage/pages/live.php
 // Monitor ongoing exams in real-time
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['end_exam_id'])) {
     $eid = (int)$_POST['end_exam_id'];
@@ -25,8 +25,8 @@ $res_live = mysqli_query($conn, $q_live);
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h5 class="mb-0 fw-bold"><i class="bi bi-broadcast text-danger me-2"></i>Live Exam Monitor</h5>
-                    <p class="small text-muted mb-0">Real-time status of exams currently in progress.</p>
+                    <h3 class="fw-bold mb-0"><i class="bi bi-broadcast text-danger me-2"></i>Live Exams</h3>
+                    <div class="text-muted small">Monitor ongoing examinations and student progress in real-time</div>
                 </div>
                 <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
             </div>

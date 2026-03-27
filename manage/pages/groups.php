@@ -1,5 +1,5 @@
 <?php
-// admin/pages/groups.php
+// manage/pages/groups.php
 
 // --- PHP HANDLERS ---
 
@@ -9,29 +9,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_group'])) {
     $name = mysqli_real_escape_string($conn, $_POST['group_name']);
     $desc = mysqli_real_escape_string($conn, $_POST['description']);
 
-    if ($group_id > 0) {
-        $query = "UPDATE `groups` SET group_name='$name', description='$desc' WHERE group_id=$group_id";
+    $check = mysqli_query($conn, "SELECT group_id FROM `groups` WHERE group_name='$name' AND group_id != $group_id LIMIT 1");
+    if ($check && mysqli_num_rows($check) > 0) {
+        $error = "A group with this name already exists.";
     } else {
-        $query = "INSERT INTO `groups` (group_name, description) VALUES ('$name', '$desc')";
-    }
-
-    if (mysqli_query($conn, $query)) {
-        $gid = ($group_id > 0) ? $group_id : mysqli_insert_id($conn);
-        $student_ids = $_POST['student_ids'] ?? [];
-
-        // 1. Remove this group from everyone who was in it
-        mysqli_query($conn, "UPDATE students SET group_id = NULL WHERE group_id = $gid");
-
-        // 2. Assign selected students to this group
-        if (!empty($student_ids)) {
-            $ids = implode(',', array_map('intval', $student_ids));
-            mysqli_query($conn, "UPDATE students SET group_id = $gid WHERE id IN ($ids)");
+        if ($group_id > 0) {
+            $query = "UPDATE `groups` SET group_name='$name', description='$desc' WHERE group_id=$group_id";
+        } else {
+            $query = "INSERT INTO `groups` (group_name, description) VALUES ('$name', '$desc')";
         }
 
-        header("Location: index.php?view=groups&success=Group saved");
-        exit;
-    } else {
-        $error = mysqli_error($conn);
+        if (mysqli_query($conn, $query)) {
+            $gid = ($group_id > 0) ? $group_id : mysqli_insert_id($conn);
+            $student_ids = $_POST['student_ids'] ?? [];
+
+            // 1. Remove all current members of this group
+            mysqli_query($conn, "DELETE FROM student_groups WHERE group_id = $gid");
+
+            // 2. Assign selected students to this group (moving them from any old group)
+            if (!empty($student_ids)) {
+                foreach ($student_ids as $sid) {
+                    $sid = (int)$sid;
+                    // Enforce one group per student: remove from any old group membership
+                    mysqli_query($conn, "DELETE FROM student_groups WHERE student_id = $sid");
+                    // Add to the new group
+                    mysqli_query($conn, "INSERT INTO student_groups (student_id, group_id) VALUES ($sid, $gid)");
+                }
+            }
+
+            header("Location: index.php?view=groups&success=Group saved");
+            exit;
+        } else {
+            $error = mysqli_error($conn);
+        }
     }
 }
 
@@ -45,16 +55,24 @@ if (isset($_GET['delete_group'])) {
 }
 
 // --- DATA FETCHING ---
-$query = "SELECT g.*, (SELECT COUNT(*) FROM students WHERE group_id = g.group_id) as student_count FROM `groups` g ORDER BY group_name";
+$query = "SELECT g.*, (SELECT COUNT(*) FROM student_groups WHERE group_id = g.group_id) as student_count FROM `groups` g ORDER BY group_name";
 $res = mysqli_query($conn, $query);
 $groups = [];
 while($row = mysqli_fetch_assoc($res)) $groups[] = $row;
 ?>
 
 <?php if (isset($_GET['success'])): ?>
-<script>
-    Swal.fire({ icon: 'success', title: 'Success', text: '<?= htmlspecialchars($_GET['success']) ?>', timer: 2000, showConfirmButton: false });
-</script>
+    <div class="alert alert-success alert-dismissible fade show small mb-4" role="alert">
+        <?= htmlspecialchars($_GET['success']) ?>
+        <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($error)): ?>
+    <div class="alert alert-danger alert-dismissible fade show small mb-4" role="alert">
+        <?= htmlspecialchars($error) ?>
+        <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+    </div>
 <?php endif; ?>
 
 <div class="row g-3">
@@ -62,8 +80,8 @@ while($row = mysqli_fetch_assoc($res)) $groups[] = $row;
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h5 class="mb-0 fw-bold">Student Groups</h5>
-                    <p class="small text-muted mb-0">Manage groups for targeted examinations.</p>
+                    <h3 class="fw-bold mb-0">Group Management</h3>
+                    <div class="text-muted small">Organize students into academic classes and testing groups</div>
                 </div>
                 <button class="btn btn-primary" onclick="openAddGroupModal()">
                     <i class="bi bi-plus-lg me-1"></i> Create Group
@@ -123,14 +141,28 @@ while($row = mysqli_fetch_assoc($res)) $groups[] = $row;
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Description</label>
-                    <textarea name="description" id="description" class="form-control" rows="2"></textarea>
+                    <input type="text" name="description" id="description" class="form-control" placeholder="Optional notes about this group">
                 </div>
                 <hr>
                 <div class="mb-2 d-flex justify-content-between align-items-center">
                     <label class="form-label fw-bold mb-0">Assign Students</label>
-                    <div class="small">
-                        <input type="checkbox" id="selectAllInGroup" class="form-check-input">
-                        <label for="selectAllInGroup" class="form-check-label small muted">Select All</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <select id="filterPrefixModal" class="form-select form-select-sm" style="width: auto;">
+                            <option value="all">All Prefixes</option>
+                            <?php 
+                            $pall = $conn->query("SELECT id, prefix_name FROM student_prefixes ORDER BY prefix_name");
+                            while($p = $pall->fetch_assoc()): ?>
+                                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['prefix_name']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" id="searchInModal" class="form-control border-start-0 ps-0" placeholder="Search name or ID...">
+                        </div>
+                        <div class="small ms-2">
+                            <input type="checkbox" id="selectAllInGroup" class="form-check-input">
+                            <label for="selectAllInGroup" class="form-check-label small muted" style="white-space:nowrap">All</label>
+                        </div>
                     </div>
                 </div>
                 <div id="groupStudentList" class="list-group border rounded shadow-sm" style="max-height: 250px; overflow-y: auto;">
@@ -169,23 +201,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function fetchAndPopulateStudents(groupId) {
         const list = document.getElementById('groupStudentList');
+        const prefix = document.getElementById('filterPrefixModal').value;
+        const search = document.getElementById('searchInModal').value;
+        
         list.innerHTML = '<div class="p-3 text-center small muted">Loading students...</div>';
         document.getElementById('selectAllInGroup').checked = false;
 
-        fetch(`ajax_groups.php?action=get_group_students&group_id=${groupId}`)
+        fetch(`ajax_groups.php?action=get_group_students&group_id=${groupId}&filter_prefix=${prefix}&search=${encodeURIComponent(search)}`)
         .then(r => r.json())
         .then(students => {
             if(students.length === 0) {
-                list.innerHTML = '<div class="p-3 text-center small muted">No students found in system.</div>';
+                list.innerHTML = '<div class="p-3 text-center small muted">No matching students found.</div>';
                 return;
             }
             list.innerHTML = "";
             students.forEach(s => {
-                const isChecked = (parseInt(s.group_id) === parseInt(groupId));
-                const otherGroup = (s.group_id && parseInt(s.group_id) !== parseInt(groupId)) ? `<span class="badge bg-light text-muted border ms-2">Already in: ${s.group_name}</span>` : '';
+                const isChecked = (s.group_id !== null && parseInt(s.group_id) === parseInt(groupId));
+                const otherGroup = (s.group_name) ? `<span class="badge bg-light text-muted border ms-2">In: ${s.group_name}</span>` : '';
                 
                 const label = document.createElement('label');
-                label.className = 'list-group-item d-flex align-items-center gap-2 py-2';
+                label.className = 'list-group-item d-flex align-items-center gap-2 py-2 student-item';
                 label.innerHTML = `
                     <input type="checkbox" name="student_ids[]" value="${s.id}" class="form-check-input student-group-cb" ${isChecked ? 'checked' : ''}>
                     <div class="flex-grow-1">
@@ -198,8 +233,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    document.getElementById('filterPrefixModal').addEventListener('change', () => {
+        const g_id = document.getElementById('group_id').value || 0;
+        fetchAndPopulateStudents(g_id);
+    });
+
+    let searchTimer;
+    document.getElementById('searchInModal').addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            const g_id = document.getElementById('group_id').value || 0;
+            fetchAndPopulateStudents(g_id);
+        }, 300);
+    });
+
     document.getElementById('selectAllInGroup').addEventListener('change', function() {
-        document.querySelectorAll('.student-group-cb').forEach(cb => cb.checked = this.checked);
+        document.querySelectorAll('.student-group-cb').forEach(cb => {
+            cb.checked = this.checked;
+        });
     });
 
     window.confirmDeleteGroup = function(id, name) {

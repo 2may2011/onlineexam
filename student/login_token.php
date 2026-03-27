@@ -57,7 +57,7 @@ if (empty($token)) {
     <title>Login Error</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="d-flex align-items-center justify-content-center vh-100 bg-light">
+<body class="d-flex align-items-center justify-content-center vh-100" style="background: #E5E8EF;">
     <div class="card shadow-sm p-4 text-center" style="max-width: 400px;">
         <div class="mb-3 text-danger display-1"><i class="bi bi-exclamation-circle"></i></div>
         <h4 class="mb-3">Login Failed</h4>

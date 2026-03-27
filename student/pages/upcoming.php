@@ -5,9 +5,9 @@ $student_id = $_SESSION['student_id'];
 // Fetch upcoming exams
 $q_exams = "SELECT e.*, qb.bank_name 
             FROM exams e 
-            JOIN students s ON (e.group_id = s.group_id OR e.group_id IS NULL OR e.group_id = 0)
+            JOIN exam_assignments ea ON e.exam_id = ea.exam_id 
             JOIN question_banks qb ON e.bank_id = qb.bank_id
-            WHERE s.id = $student_id 
+            WHERE ea.student_id = $student_id 
             AND e.start_time > NOW()
             ORDER BY e.start_time ASC";
 $res_exams = mysqli_query($conn, $q_exams);

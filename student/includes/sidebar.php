@@ -66,15 +66,15 @@
     align-items: center;
 }
 .sidebar .nav-link:hover {
-    background-color: #f3f4f6;
-    color: #111827;
+    background-color: #e8e8e8;
+    color: #333;
 }
 .sidebar .nav-link.active {
-    background-color: #e0e7ff; /* Lighter Indigo-ish */
-    color: #3730a3; /* Darker Indigo text */
+    background-color: rgba(255, 184, 0, 0.15);
+    color: #002583;
     font-weight: 600;
 }
 .sidebar .nav-link.active i {
-    color: #4f46e5;
+    color: #FFB800;
 }
 </style>
