@@ -112,7 +112,18 @@ CREATE TABLE IF NOT EXISTS exam_submissions (
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
--- 11. Student Answers
+-- 11. Exam Assignments (Who is assigned to which exam)
+CREATE TABLE IF NOT EXISTS exam_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    exam_id INT NOT NULL,
+    student_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    UNIQUE KEY (exam_id, student_id)
+);
+
+-- 12. Student Answers (Individual question responses)
 CREATE TABLE IF NOT EXISTS student_answers (
     answer_id INT AUTO_INCREMENT PRIMARY KEY,
     submission_id INT NOT NULL,

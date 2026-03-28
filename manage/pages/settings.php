@@ -267,7 +267,7 @@ if ($res) {
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Description</label>
-                    <textarea name="prefix_desc" class="form-index form-control" rows="2" placeholder="Brief description for internal use..."></textarea>
+                    <input type="text" name="prefix_desc" class="form-control" placeholder="Brief description for internal use...">
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -295,7 +295,7 @@ if ($res) {
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Description</label>
-                    <textarea name="prefix_desc" id="edit_pdesc" class="form-index form-control" rows="2" placeholder="Brief description for internal use..."></textarea>
+                    <input type="text" name="prefix_desc" id="edit_pdesc" class="form-control" placeholder="Brief description for internal use...">
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -339,14 +339,24 @@ function openEditPrefixModal(p) {
     document.getElementById('edit_pname').value = p.prefix_name;
     document.getElementById('edit_pdesc').value = p.description;
     
-    // Initialize modal instance when needed
     const modalEl = document.getElementById('editPrefixModal');
     let modalInstance = bootstrap.Modal.getInstance(modalEl);
-    if (!modalInstance) {
-        modalInstance = new bootstrap.Modal(modalEl);
-    }
+    if (!modalInstance) modalInstance = new bootstrap.Modal(modalEl);
     modalInstance.show();
+    validatePrefixForm('editPrefixModal');
 }
+
+function validatePrefixForm(modalId) {
+    const modal = document.getElementById(modalId);
+    const btn = modal.querySelector('button[type="submit"]');
+    const name = modal.querySelector('input[name="prefix_name"]').value.trim();
+    if(btn) btn.disabled = !name;
+}
+
+document.getElementById('addPrefixModal').addEventListener('input', () => validatePrefixForm('addPrefixModal'));
+document.getElementById('editPrefixModal').addEventListener('input', () => validatePrefixForm('editPrefixModal'));
+document.getElementById('addPrefixModal').addEventListener('shown.bs.modal', () => validatePrefixForm('addPrefixModal'));
+document.getElementById('editPrefixModal').addEventListener('shown.bs.modal', () => validatePrefixForm('editPrefixModal'));
 </script>
 
 <style>

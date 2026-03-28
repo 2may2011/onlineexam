@@ -12,11 +12,7 @@ $maleCount = 0;
 $femaleCount = 0;
 $passCount = 0;
 $failCount = 0;
-
-// Advanced Chart Data
-$questionsPerBank = [];
-$examPerformance = [];
-$examStatusCounts = ['upcoming' => 0, 'ongoing' => 0, 'completed' => 0];
+$absentCount = 0;
 $scoreDistribution = [0,0,0,0,0]; // 0-20, 21-40, 41-60, 61-80, 81-100
 
 if(isset($conn)){
@@ -50,23 +46,20 @@ if(isset($conn)){
         else $failCount++;
     }
 
-    // Questions per Bank (for horizontal bar)
-    $resQPB = $conn->query("SELECT qb.bank_name, COUNT(q.question_id) as qcount FROM question_banks qb LEFT JOIN questions q ON qb.bank_id = q.bank_id GROUP BY qb.bank_id ORDER BY qcount DESC LIMIT 8");
-    if($resQPB) while($row = $resQPB->fetch_assoc()){
-        $questionsPerBank[] = $row;
-    }
-
-    // Per-Exam Performance (avg score + pass count for bar chart)
-    $resEP = $conn->query("SELECT e.title, ROUND(AVG(es.score),1) as avg_score, ROUND(MAX(e.passing_marks),1) as pass_mark, COUNT(es.submission_id) as participants FROM exams e JOIN exam_submissions es ON e.exam_id = es.exam_id WHERE es.status = 'submitted' GROUP BY e.exam_id ORDER BY e.created_at DESC LIMIT 6");
-    if($resEP) while($row = $resEP->fetch_assoc()){
-        $examPerformance[] = $row;
-    }
-
-    // Exam Status Breakdown
-    $resES = $conn->query("SELECT status, COUNT(*) as cnt FROM exams GROUP BY status");
-    if($resES) while($row = $resES->fetch_assoc()){
-        $examStatusCounts[$row['status']] = (int)$row['cnt'];
-    }
+    // Absent = students assigned to exam but never submitted (completed exams only)
+    $resAbsent = $conn->query("
+        SELECT COUNT(*) as absent_count FROM (
+            SELECT DISTINCT ea.student_id, e.exam_id
+            FROM exams e
+            JOIN exam_assignments ea ON e.exam_id = ea.exam_id
+            WHERE e.status = 'completed'
+            AND NOT EXISTS (
+                SELECT 1 FROM exam_submissions es 
+                WHERE es.exam_id = e.exam_id AND es.student_id = ea.student_id
+            )
+        ) absent_records
+    ");
+    if($resAbsent) $absentCount = $resAbsent->fetch_row()[0];
 
     // Score Distribution (percentage-based buckets)
     $resSD = $conn->query("SELECT es.score, e.passing_marks, (SELECT COUNT(*) FROM questions q WHERE q.bank_id = e.bank_id) * e.question_weight as max_score FROM exam_submissions es JOIN exams e ON es.exam_id = e.exam_id WHERE es.status = 'submitted'");
@@ -162,50 +155,125 @@ if(isset($conn)){
   </div>
 </div>
 
-<!-- Charts Row 1 -->
-<div class="row g-3 mb-3">
-  <div class="col-12 col-md-6 col-xl-3">
-    <div class="card p-3 h-100">
-      <div class="small text-muted mb-3">Gender Distribution</div>
-      <canvas id="genderChart" height="180"></canvas>
-    </div>
-  </div>
+<!-- Charts -->
+<style>
+  .chart-card {
+    border-radius: 16px;
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .chart-card .chart-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.15rem;
+  }
+  .chart-card .chart-subtitle {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+  }
+  .chart-card .chart-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .custom-legend {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .custom-legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  .custom-legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .custom-legend .legend-value {
+    font-weight: 700;
+    color: #1f2937;
+    margin-left: 2px;
+  }
+  .stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    background: rgba(0,37,131,0.06);
+    color: var(--theme-shade);
+  }
+</style>
 
-  <div class="col-12 col-md-6 col-xl-3">
-    <div class="card p-3 h-100">
-      <div class="small text-muted mb-3">Pass / Fail Rate</div>
-      <canvas id="passRateChart" height="180"></canvas>
-    </div>
-  </div>
-
-  <div class="col-12 col-xl-6">
-    <div class="card p-3 h-100">
-      <div class="small text-muted mb-3">Questions per Bank</div>
-      <canvas id="bankChart" height="90"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- Charts Row 2 -->
 <div class="row g-3">
-  <div class="col-12 col-xl-5">
-    <div class="card p-3 h-100">
-      <div class="small text-muted mb-3">Exam Performance — Avg Score vs Pass Mark</div>
-      <canvas id="examPerfChart" height="120"></canvas>
+  <!-- Score Distribution Bar Chart -->
+  <div class="col-12 col-xl-6">
+    <div class="card chart-card">
+      <div class="d-flex align-items-start justify-content-between">
+        <div>
+          <div class="chart-title">Score Distribution</div>
+          <div class="chart-subtitle">Student scores grouped by percentage range</div>
+        </div>
+        <span class="stat-pill">
+          <i class="bi bi-bar-chart-fill"></i>
+          <?= array_sum($scoreDistribution) ?> submissions
+        </span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="scoreDistChart"></canvas>
+      </div>
     </div>
   </div>
 
-  <div class="col-12 col-xl-4">
-    <div class="card p-3 h-100">
-      <div class="small text-muted mb-3">Score Distribution</div>
-      <canvas id="scoreDistChart" height="120"></canvas>
+  <!-- Pass/Fail/Absent Pie Chart -->
+  <div class="col-12 col-md-6 col-xl-3">
+    <div class="card chart-card">
+      <div>
+        <div class="chart-title">Pass / Fail / Absent</div>
+        <div class="chart-subtitle">Overall exam result breakdown</div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="passRateChart"></canvas>
+      </div>
+      <ul class="custom-legend">
+        <li><span class="dot" style="background: #10b981;"></span> Passed <span class="legend-value"><?= $passCount ?></span></li>
+        <li><span class="dot" style="background: #ef4444;"></span> Failed <span class="legend-value"><?= $failCount ?></span></li>
+        <li><span class="dot" style="background: #9ca3af;"></span> Absent <span class="legend-value"><?= $absentCount ?></span></li>
+      </ul>
     </div>
   </div>
 
-  <div class="col-12 col-xl-3">
-    <div class="card p-3 h-100">
-      <div class="small text-muted mb-3">Exam Status</div>
-      <canvas id="examStatusChart" height="120"></canvas>
+  <!-- Gender Distribution Pie Chart -->
+  <div class="col-12 col-md-6 col-xl-3">
+    <div class="card chart-card">
+      <div>
+        <div class="chart-title">Gender Distribution</div>
+        <div class="chart-subtitle">Registered student demographics</div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="genderChart"></canvas>
+      </div>
+      <ul class="custom-legend">
+        <li><span class="dot" style="background: var(--theme-shade);"></span> Male <span class="legend-value"><?= $maleCount ?></span></li>
+        <li><span class="dot" style="background: #FFB800;"></span> Female <span class="legend-value"><?= $femaleCount ?></span></li>
+      </ul>
     </div>
   </div>
 </div>
@@ -214,107 +282,199 @@ if(isset($conn)){
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    const muted = '#6c757d';
-    const gridColor = 'rgba(0,0,0,0.05)';
-    const baseOpts = {
-        maintainAspectRatio: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: '#fff',
-                titleColor: '#333',
-                bodyColor: '#555',
-                borderColor: '#dee2e6',
-                borderWidth: 1,
-                padding: 10,
-                cornerRadius: 6
-            }
-        }
+    const fontFamily = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+    const tooltipConfig = {
+        backgroundColor: 'rgba(17, 24, 39, 0.92)',
+        titleColor: '#f9fafb',
+        bodyColor: '#e5e7eb',
+        borderColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 10,
+        titleFont: { family: fontFamily, size: 13, weight: '600' },
+        bodyFont: { family: fontFamily, size: 12 },
+        displayColors: true,
+        boxWidth: 8,
+        boxHeight: 8,
+        boxPadding: 6,
+        usePointStyle: true,
+        pointStyle: 'circle'
     };
 
-    // 1. Gender
+    // ── 1. Score Distribution (Bar Chart) ──────
+    const scoreCtx = document.getElementById('scoreDistChart').getContext('2d');
+
+    const barColors = [
+        { from: '#f43f5e', to: '#fb7185', label: 'Very Poor' }, // 0-20 (Rose)
+        { from: '#fb923c', to: '#fdba74', label: 'Below Average' }, // 21-40 (Orange)
+        { from: '#fbbf24', to: '#fcd34d', label: 'Average' }, // 41-60 (Amber)
+        { from: '#0ea5e9', to: '#7dd3fc', label: 'Good' }, // 61-80 (Sky)
+        { from: '#10b981', to: '#6ee7b7', label: 'Excellent' } // 81-100 (Emerald)
+    ];
+
+    const gradients = barColors.map(c => {
+        const g = scoreCtx.createLinearGradient(0, 0, 0, 300);
+        g.addColorStop(0, c.from);
+        g.addColorStop(1, c.to);
+        return g;
+    });
+
+    new Chart(scoreCtx, {
+        type: 'bar',
+        data: {
+            labels: ['0–20%', '21–40%', '41–60%', '61–80%', '81–100%'],
+            datasets: [{
+                label: 'Students',
+                data: <?= json_encode($scoreDistribution) ?>,
+                backgroundColor: gradients,
+                borderRadius: { topLeft: 8, topRight: 8 },
+                borderSkipped: false,
+                barThickness: 40,
+                hoverBackgroundColor: barColors.map(c => c.from)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            animation: { duration: 1000, easing: 'easeOutQuart', delay: (ctx) => ctx.dataIndex * 100 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    ...tooltipConfig,
+                    callbacks: {
+                        title: (items) => {
+                            const idx = items[0].dataIndex;
+                            return `Score Range: ${items[0].label} (${barColors[idx].label})`;
+                        },
+                        label: (item) => {
+                            const total = item.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? ((item.raw / total) * 100).toFixed(1) : 0;
+                            return `  ${item.raw} student${item.raw !== 1 ? 's' : ''} (${pct}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, border: { display: false }, ticks: { color: '#9ca3af', font: { family: fontFamily, size: 12, weight: '500' }, padding: 8 } },
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, border: { display: false }, ticks: { color: '#9ca3af', font: { family: fontFamily, size: 11 }, precision: 0, padding: 8 } }
+            }
+        }
+    });
+
+    // ── 2. Pass/Fail/Absent (Doughnut) ─────────
+    const pfaTotal = <?= $passCount + $failCount + $absentCount ?>;
+
+    new Chart(document.getElementById('passRateChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Passed', 'Failed', 'Absent'],
+            datasets: [{
+                data: [<?= $passCount ?>, <?= $failCount ?>, <?= $absentCount ?>],
+                backgroundColor: ['#10b981', '#ef4444', '#d1d5db'],
+                hoverBackgroundColor: ['#059669', '#dc2626', '#9ca3af'],
+                borderWidth: 0,
+                hoverOffset: 6,
+                spacing: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '72%',
+            animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    ...tooltipConfig,
+                    callbacks: {
+                        label: (item) => {
+                            const pct = pfaTotal > 0 ? ((item.raw / pfaTotal) * 100).toFixed(1) : 0;
+                            return `  ${item.label}: ${item.raw} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            afterDraw(chart) {
+                const { ctx } = chart;
+                const meta = chart.getDatasetMeta(0);
+                if (!meta.data.length) return;
+                const firstArc = meta.data[0];
+                const centerX = firstArc.x;
+                const centerY = firstArc.y;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `800 1.5rem ${fontFamily}`;
+                ctx.fillStyle = '#1f2937';
+                ctx.fillText(pfaTotal, centerX, centerY - 8);
+                ctx.font = `500 0.7rem ${fontFamily}`;
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText('total', centerX, centerY + 14);
+                ctx.restore();
+            }
+        }]
+    });
+
+    // ── 3. Gender Distribution (Doughnut) ──────
+    const genderTotal = <?= $maleCount + $femaleCount ?>;
+
     new Chart(document.getElementById('genderChart'), {
         type: 'doughnut',
         data: {
             labels: ['Male', 'Female'],
-            datasets: [{ data: [<?= $maleCount ?>, <?= $femaleCount ?>], backgroundColor: ['#002583','#f6c23e'], borderWidth: 0, hoverOffset: 4 }]
+            datasets: [{
+                data: [<?= $maleCount ?>, <?= $femaleCount ?>],
+                backgroundColor: ['#002583', '#FFB800'],
+                hoverBackgroundColor: ['#001a66', '#D99E00'],
+                borderWidth: 0,
+                hoverOffset: 6,
+                spacing: 2
+            }]
         },
-        options: { ...baseOpts, cutout: '65%',
-            plugins: { ...baseOpts.plugins, legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 12 } } } }
-        }
-    });
-
-    // 2. Pass Rate
-    new Chart(document.getElementById('passRateChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Passed', 'Failed'],
-            datasets: [{ data: [<?= $passCount ?>, <?= $failCount ?>], backgroundColor: ['#1cc88a','#e74a3b'], borderWidth: 0, hoverOffset: 4 }]
-        },
-        options: { ...baseOpts, cutout: '65%',
-            plugins: { ...baseOpts.plugins, legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 12 } } } }
-        }
-    });
-
-    // 3. Questions per Bank
-    new Chart(document.getElementById('bankChart'), {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode(array_column($questionsPerBank, 'bank_name')) ?>,
-            datasets: [{ data: <?= json_encode(array_map('intval', array_column($questionsPerBank, 'qcount'))) ?>, backgroundColor: '#002583', borderRadius: 4, barThickness: 16 }]
-        },
-        options: { ...baseOpts, indexAxis: 'y',
-            scales: {
-                x: { grid: { color: gridColor }, ticks: { precision: 0, color: muted, font: { size: 11 } }, border: { display: false } },
-                y: { grid: { display: false }, ticks: { color: muted, font: { size: 11 }, callback: v => { const l = this.getLabelForValue ? this.getLabelForValue(v) : v; return typeof l === 'string' && l.length > 20 ? l.slice(0,20)+'…' : l; } }, border: { display: false } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '72%',
+            animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart', delay: 200 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    ...tooltipConfig,
+                    callbacks: {
+                        label: (item) => {
+                            const pct = genderTotal > 0 ? ((item.raw / genderTotal) * 100).toFixed(1) : 0;
+                            return `  ${item.label}: ${item.raw} (${pct}%)`;
+                        }
+                    }
+                }
             }
-        }
-    });
-
-    // 4. Exam Performance
-    new Chart(document.getElementById('examPerfChart'), {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode(array_map(function($e){ return mb_strlen($e['title']) > 15 ? mb_substr($e['title'],0,15).'…' : $e['title']; }, $examPerformance)) ?>,
-            datasets: [
-                { label: 'Avg Score', data: <?= json_encode(array_map('floatval', array_column($examPerformance, 'avg_score'))) ?>, backgroundColor: '#002583', borderRadius: 4 },
-                { label: 'Pass Mark', data: <?= json_encode(array_map('floatval', array_column($examPerformance, 'pass_mark'))) ?>, backgroundColor: '#f6c23e', borderRadius: 4 }
-            ]
         },
-        options: { ...baseOpts,
-            plugins: { ...baseOpts.plugins, legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 12 } } } },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: muted, font: { size: 11 } }, border: { display: false } },
-                y: { grid: { color: gridColor }, beginAtZero: true, ticks: { precision: 0, color: muted, font: { size: 11 } }, border: { display: false } }
+        plugins: [{
+            id: 'centerTextGender',
+            afterDraw(chart) {
+                const { ctx } = chart;
+                const meta = chart.getDatasetMeta(0);
+                if (!meta.data.length) return;
+                const firstArc = meta.data[0];
+                const centerX = firstArc.x;
+                const centerY = firstArc.y;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = `800 1.5rem ${fontFamily}`;
+                ctx.fillStyle = '#1f2937';
+                ctx.fillText(genderTotal, centerX, centerY - 8);
+                ctx.font = `500 0.7rem ${fontFamily}`;
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText('total', centerX, centerY + 14);
+                ctx.restore();
             }
-        }
+        }]
     });
 
-    // 5. Score Distribution
-    new Chart(document.getElementById('scoreDistChart'), {
-        type: 'bar',
-        data: {
-            labels: ['0–20%','21–40%','41–60%','61–80%','81–100%'],
-            datasets: [{ label: 'Students', data: <?= json_encode($scoreDistribution) ?>, backgroundColor: ['#e74a3b','#fd7e14','#f6c23e','#36b9cc','#1cc88a'], borderRadius: 4 }]
-        },
-        options: { ...baseOpts,
-            scales: {
-                x: { grid: { display: false }, ticks: { color: muted, font: { size: 11 } }, border: { display: false } },
-                y: { grid: { color: gridColor }, beginAtZero: true, ticks: { precision: 0, color: muted, font: { size: 11 } }, border: { display: false } }
-            }
-        }
-    });
-
-    // 6. Exam Status
-    new Chart(document.getElementById('examStatusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Upcoming', 'Ongoing', 'Completed'],
-            datasets: [{ data: [<?= $examStatusCounts['upcoming'] ?>, <?= $examStatusCounts['ongoing'] ?>, <?= $examStatusCounts['completed'] ?>], backgroundColor: ['#f6c23e','#e74a3b','#1cc88a'], borderWidth: 0, hoverOffset: 4 }]
-        },
-        options: { ...baseOpts, cutout: '55%',
-            plugins: { ...baseOpts.plugins, legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } } }
-        }
-    });
 });
 </script>

@@ -285,7 +285,7 @@ if (!$q_res && !isset($db_error)) {
         </div>
 
       </div>
-      <div class="modal-footer border-0">
+      <div class="modal-footer border-0" style="margin-top: 0.9rem; padding-top: 0;">
         <button class="btn btn-outline-secondary px-4 border-0" type="button" data-bs-dismiss="modal">Cancel</button>
         <button class="btn btn-outline-mustard px-4 py-2 rounded-3" type="submit" name="save_question" id="btnSaveQuestion">Save Questions</button>
       </div>
@@ -347,45 +347,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
         div.innerHTML = `
             <input type="hidden" name="questions[${idx}][id]" value="${qid}">
-            <div class="row g-2">
+            <div class="row" style="row-gap: 1.2rem; column-gap: 1.2rem;">
                 <div class="col-12">
-                    <div class="d-flex align-items-center gap-2">
-                        <input type="text" name="questions[${idx}][text]" class="form-control" placeholder="Question Text" value="${text}" required>
+                    <div class="d-flex align-items-center" style="gap: 1.2rem;">
+                        <div class="input-group">
+                            <span class="input-group-text border-0 text-white bg-sidebar" style="min-width: 90px;">Question</span>
+                            <input type="text" name="questions[${idx}][text]" class="form-control" placeholder="Type question here..." value="${text}" required>
+                        </div>
                         ${idx > 0 ? '<button type="button" class="btn-close small" onclick="this.closest(\'.card\').remove()" style="flex-shrink:0"></button>' : ''}
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text border-0 text-white fw-bold bg-mustard">A</span>
+                        <span class="input-group-text border-0 text-white bg-sidebar" style="min-width: 40px; justify-content: center;">A</span>
                         <input type="text" name="questions[${idx}][a]" class="form-control" placeholder="Option A" value="${a}" required>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text border-0 text-white fw-bold bg-mustard">B</span>
+                        <span class="input-group-text border-0 text-white bg-sidebar" style="min-width: 40px; justify-content: center;">B</span>
                         <input type="text" name="questions[${idx}][b]" class="form-control" placeholder="Option B" value="${b}" required>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text border-0 text-white fw-bold bg-mustard">C</span>
+                        <span class="input-group-text border-0 text-white bg-sidebar" style="min-width: 40px; justify-content: center;">C</span>
                         <input type="text" name="questions[${idx}][c]" class="form-control" placeholder="Option C" value="${c}" required>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text border-0 text-white fw-bold bg-mustard">D</span>
+                        <span class="input-group-text border-0 text-white bg-sidebar" style="min-width: 40px; justify-content: center;">D</span>
                         <input type="text" name="questions[${idx}][d]" class="form-control" placeholder="Option D" value="${d}" required>
                     </div>
                 </div>
-                <div class="col-12 mt-2">
-                    <div class="d-flex align-items-center gap-3">
-                        <small class="fw-bold">Answer:</small>
-                        <div class="d-flex gap-2">
+                <div class="col-12" style="margin-top: 1.2rem;">
+                    <div class="d-flex align-items-center" style="gap: 1.2rem;">
+                        <small class="text-muted">Correct Answer:</small>
+                        <div class="d-flex gap-4">
                             ${['A','B','C','D'].map(o => `
-                                <div class="form-check form-check-inline m-0">
+                                <div class="form-check m-0">
                                     <input class="form-check-input" type="radio" name="questions[${idx}][correct]" value="${o}" id="corr_${idx}_${o}" ${correct === o ? 'checked' : ''} required>
-                                    <label class="form-check-label small" for="corr_${idx}_${o}">${o}</label>
+                                    <label class="form-check-label" for="corr_${idx}_${o}">${o}</label>
                                 </div>
                             `).join('')}
                         </div>
@@ -442,14 +445,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validateQuestionForm() {
-        // Basic batch validation: enabled if bank_id is set
-        const bank = document.getElementById('q_bank_hidden').value;
-        if(btnSaveQuestion) btnSaveQuestion.disabled = !bank;
+        const rows = document.querySelectorAll('#batchQuestionRows .card');
+        let allValid = true;
+        if(rows.length === 0) allValid = false;
+
+        rows.forEach(row => {
+            const text = row.querySelector('input[name*="[text]"]').value.trim();
+            const a = row.querySelector('input[name*="[a]"]').value.trim();
+            const b = row.querySelector('input[name*="[b]"]').value.trim();
+            const c = row.querySelector('input[name*="[c]"]').value.trim();
+            const d = row.querySelector('input[name*="[d]"]').value.trim();
+            const checked = row.querySelector('input[type="radio"]:checked');
+
+            if(!text || !a || !b || !c || !d || !checked) allValid = false;
+        });
+
+        if(btnSaveQuestion) btnSaveQuestion.disabled = !allValid;
     }
 
     // Attach listeners
     document.getElementById('modalBank').addEventListener('input', validateBankForm);
     document.getElementById('modalQuestion').addEventListener('input', validateQuestionForm);
+    document.getElementById('modalQuestion').addEventListener('change', validateQuestionForm);
 
     // Run initial validation when modals open
     document.getElementById('modalBank').addEventListener('shown.bs.modal', validateBankForm);

@@ -631,8 +631,24 @@ function openEditModal(student) {
     }
     
     new bootstrap.Modal(document.getElementById('modalEditStudent')).show();
+    validateEditStudentForm();
 }
 
+function validateEditStudentForm() {
+    const modal = document.getElementById('modalEditStudent');
+    const btn = modal.querySelector('button[type="submit"]');
+    const name = document.getElementById('edit_name').value.trim();
+    const email = document.getElementById('edit_email').value.trim();
+    const genderM = document.getElementById('edit_gender_m').checked;
+    const genderF = document.getElementById('edit_gender_f').checked;
+    
+    if(btn) btn.disabled = !(name && email && (genderM || genderF));
+}
+
+document.getElementById('modalEditStudent').addEventListener('input', validateEditStudentForm);
+document.getElementById('modalEditStudent').addEventListener('change', validateEditStudentForm);
+</script>
+<script>
 /**
  * Enhanced addStudentRow to support auto-population
  */
@@ -663,7 +679,7 @@ function addStudentRow(data = null) {
             </div>
         </td>
         <td class="text-center">
-            <button type="button" class="btn btn-sm btn-light text-danger" onclick="this.closest('tr').remove(); validateBulkForm();"><i class="bi bi-x-lg"></i></button>
+            <button type="button" class="btn-close small" onclick="this.closest('tr').remove(); validateBulkForm();" style="flex-shrink:0"></button>
         </td>
     `;
     tbody.appendChild(tr);

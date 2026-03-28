@@ -16,7 +16,7 @@ function navActive(string $view, string $activeView): string {
       <i class="bi bi-shield-lock fs-4 text-primary"></i>
       <div>
         <div class="brand">Online Exam Portal</div>
-        <div class="small text-secondary">Manage Panel</div>
+        <div class="small text-secondary">Admin Panel</div>
       </div>
     </div>
 
@@ -93,14 +93,14 @@ function navActive(string $view, string $activeView): string {
         <button class="btn" style="color: var(--theme-primary, #FFB800); border-color: var(--theme-primary, #FFB800);" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav">
           <i class="bi bi-list"></i>
         </button>
-        <div class="fw-semibold">Online Exam Portal • Manage</div>
+        <div class="fw-semibold">Online Exam Portal • Admin</div>
         <a class="btn btn-outline-secondary" href="logout.php"><i class="bi bi-box-arrow-left"></i></a>
       </div>
     </nav>
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNav">
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Manage Menu</h5>
+        <h5 class="offcanvas-title">Admin Menu</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">

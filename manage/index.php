@@ -94,6 +94,15 @@ if (!in_array($activeView, $valid, true)) $activeView = "dashboard";
     .table td, .table th { vertical-align: middle; }
     .muted { color:#6b7280; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+    /* Disabled State for Buttons */
+    .btn:disabled, .btn[disabled] {
+        background-color: #e9ecef !important;
+        border-color: #dee2e6 !important;
+        color: #adb5bd !important;
+        cursor: not-allowed;
+        opacity: 1 !important;
+    }
+
     @media (max-width: 991.98px){ 
         .sidebar { display:none; } 
         .content { width: 100%; margin-left: 0; }

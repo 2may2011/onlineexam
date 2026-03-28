@@ -22,9 +22,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_exam'])) {
     if ($weight < 0) { header("Location: index.php?view=exams&error=Question weight cannot be negative"); exit; }
     if ($negative < 0) { header("Location: index.php?view=exams&error=Negative marking cannot be negative"); exit; }
     
-    // Future date validation for NEW exams
-    if ($exam_id == 0 && strtotime($start_time) < time()) {
-        header("Location: index.php?view=exams&error=Exam start time must be in the future");
+    // Future date validation: Exam start time must always be ahead of current server time
+    if (strtotime($start_time) < time()) {
+        header("Location: index.php?view=exams&error=Exam start time must be ahead of current server time: " . date('M d, Y h:i A'));
         exit;
     }
     
@@ -111,8 +111,11 @@ if (isset($_GET['delete_exam'])) {
 
 // --- DATA FETCHING ---
 
-// Fetch Exams with Group info
-$query_exams = "SELECT e.*, qb.bank_name, g.group_name
+// Fetch Exams with Stats
+$query_exams = "SELECT e.*, qb.bank_name, g.group_name,
+                  (SELECT COUNT(*) FROM exam_assignments WHERE exam_id = e.exam_id) as assigned_count,
+                  (SELECT COUNT(*) FROM exam_submissions es WHERE es.exam_id = e.exam_id AND es.status = 'submitted' AND es.score >= e.passing_marks) as passed_count,
+                  (SELECT COUNT(*) FROM exam_submissions es WHERE es.exam_id = e.exam_id AND es.status = 'submitted') as submitted_count
                 FROM exams e 
                 JOIN question_banks qb ON e.bank_id = qb.bank_id 
                 LEFT JOIN `groups` g ON e.group_id = g.group_id
@@ -141,6 +144,13 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
     </div>
 <?php endif; ?>
 
+<?php if (isset($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show small mb-3" role="alert">
+        <?= htmlspecialchars($_GET['error']) ?>
+        <button type="button" class="btn-close small" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem; scale: 0.8;"></button>
+    </div>
+<?php endif; ?>
+
 <?php if (isset($db_error)): ?>
     <div class="alert alert-danger alert-dismissible fade show small mb-3" role="alert">
         <?= htmlspecialchars($db_error) ?>
@@ -156,7 +166,7 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
           <h3 class="fw-bold mb-0">Exam Management</h3>
           <div class="text-muted small">Schedule and manage examinations settings and timings</div>
         </div>
-        <button class="btn btn-primary" onclick="openAddExamModal()">
+        <button class="btn btn-primary" onclick="window.location.href='index.php?view=exams&open_modal=1'">
           <i class="bi bi-plus-lg me-1"></i> Create Exam
         </button>
       </div>
@@ -168,7 +178,8 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
               <th>Exam Details</th>
               <th>Bank</th>
               <th>Schedule</th>
-              <th>Target Group</th>
+              <th>Pass Rate</th>
+              <th>Absent</th>
               <th>Status</th>
               <th class="text-end">Actions</th>
             </tr>
@@ -190,28 +201,58 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
                 </td>
                 <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($e['bank_name']) ?></span></td>
                 <td>
-                    <div class="small fw-semibold"><i class="bi bi-calendar-event me-1"></i><?= date('M d, g:i A', strtotime($e['start_time'])) ?></div>
-                    <div class="small muted"><i class="bi bi-clock me-1"></i><?= $e['duration'] ?> mins</div>
+                    <div class="small fw-semibold"><i class="bi bi-play-circle me-1 text-success"></i><?= date('M d, g:i A', strtotime($e['start_time'])) ?></div>
+                    <div class="small muted"><i class="bi bi-stop-circle me-1 text-danger"></i><?= date('M d, g:i A', strtotime($e['end_time'])) ?></div>
                 </td>
                 <td>
-                    <?php if($e['group_name']): ?>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3"><?= htmlspecialchars($e['group_name']) ?></span>
+                    <?php if ($now < $e['start_time']): ?>
+                        <span class="text-muted small">Exam not started yet</span>
                     <?php else: ?>
-                        <span class="text-muted small">All Students</span>
+                        <?php 
+                            $assigned = (int)$e['assigned_count'];
+                            $passed = (int)$e['passed_count'];
+                            $pct = ($assigned > 0) ? round(($passed / $assigned) * 100) : 0;
+                        ?>
+                        <div class="small fw-bold">
+                            (<?= $passed ?>/<?= $assigned ?>) 
+                            <?php 
+                                $color = 'danger';
+                                if($pct >= 70) $color = 'success';
+                                elseif($pct >= 40) $color = 'warning';
+                            ?>
+                            <span class="text-<?= $color ?>"><?= $pct ?>%</span>
+                        </div>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if ($now < $e['start_time']): ?>
+                        <span class="text-muted small">—</span>
+                    <?php else: ?>
+                        <?php 
+                            $absent = (int)$e['assigned_count'] - (int)$e['submitted_count'];
+                            if ($absent < 0) $absent = 0;
+                        ?>
+                        <div class="small fw-bold"><?= $absent ?></div>
                     <?php endif; ?>
                 </td>
                 <td><?= $status_badge ?></td>
                 <td class="text-end">
                     <div class="d-flex gap-1 justify-content-end">
-                        <!-- Edit Button -->
+                        <!-- View Details -->
+                        <button class="btn btn-sm btn-outline-primary" onclick='openExamDetailsModal(<?= htmlspecialchars(json_encode($e), ENT_QUOTES) ?>)' title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </button>
+
+                        <!-- View Results (only for completed) -->
                         <?php if($now > $e['end_time']): ?>
-                            <a href="index.php?view=scores&exam_id=<?= $e['exam_id'] ?>" class="btn btn-sm btn-outline-primary" title="View Results">
-                                <i class="bi bi-eye"></i>
+                            <a href="index.php?view=scores&exam_id=<?= $e['exam_id'] ?>" class="btn btn-sm btn-outline-success" title="View Results">
+                                <i class="bi bi-bar-chart-line"></i>
                             </a>
                         <?php endif; ?>
 
+                        <!-- Edit -->
                         <?php if($now < $e['start_time']): ?>
-                            <button class="btn btn-sm btn-outline-secondary" onclick='openEditExamModal(<?= htmlspecialchars(json_encode($e), ENT_QUOTES) ?>)' title="Edit">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='index.php?view=exams&edit_id=<?= $e['exam_id'] ?>'" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </button>
                         <?php else: ?>
@@ -220,7 +261,7 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
                             </button>
                         <?php endif; ?>
 
-                        <!-- Delete Button (Locked ONLY while Ongoing) -->
+                        <!-- Delete (Locked while Ongoing) -->
                         <?php if($now >= $e['start_time'] && $now <= $e['end_time']): ?>
                             <button class="btn btn-sm btn-outline-danger disabled" title="Deletion locked while ongoing">
                                 <i class="bi bi-lock"></i>
@@ -234,7 +275,7 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
                 </td>
             </tr>
             <?php endforeach; else: ?>
-            <tr><td colspan="6" class="text-center muted py-4">No exams scheduled yet.</td></tr>
+            <tr><td colspan="7" class="text-center muted py-4">No exams scheduled yet.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -279,27 +320,34 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
             <div class="col-md-6">
                 <label class="form-label fw-bold">Duration (Minutes)</label>
                 <input type="number" name="duration" id="exam_duration" class="form-control" min="1" placeholder="e.g. 60" required>
+                <div id="err_duration" class="text-danger small mt-1" style="display:none;">Must be at least 1</div>
             </div>
-            <div class="col-md-8">
+            <div class="col-8">
                 <label class="form-label fw-bold">Description</label>
-                <textarea name="description" id="exam_desc" class="form-control" rows="2"></textarea>
+                <input type="text" name="description" id="exam_desc" class="form-control" placeholder="Short description of the exam">
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Passing Marks</label>
-                <input type="number" step="0.1" name="passing_marks" id="exam_pass" class="form-control" min="0" required>
+                <input type="number" step="0.1" name="passing_marks" id="exam_pass" class="form-control" min="1" required>
+                <div id="err_pass" class="text-danger small mt-1" style="display:none;">Must be at least 1</div>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Start Date & Time</label>
                 <input type="datetime-local" name="start_time" id="exam_start" class="form-control" required>
-                <div id="time-error" class="invalid-feedback" style="display:none;"></div>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 4px;">
+                    Server Time: <span class="fw-bold"><?= date('M d, Y h:i A') ?></span>
+                    <br>(Select a time ahead of this)
+                </div>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Weight/Question</label>
-                <input type="number" step="0.1" name="question_weight" id="exam_weight" class="form-control" value="1.0" min="0.1" required>
+                <input type="number" step="0.1" name="question_weight" id="exam_weight" class="form-control" value="1.0" min="1" required>
+                <div id="err_weight" class="text-danger small mt-1" style="display:none;">Must be at least 1</div>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Negative Marking</label>
                 <input type="number" step="0.1" name="negative_marking" id="exam_neg" class="form-control" value="0.0" min="0" required>
+                <div id="err_neg" class="text-danger small mt-1" style="display:none;">Must be at least 0</div>
             </div>
         </div>
       </div>
@@ -311,20 +359,87 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
   </div>
 </div>
 
+<!-- EXAM DETAILS MODAL (View Only) -->
+<div class="modal fade" id="modalExamDetails" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailsModalTitle">Exam Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label fw-bold text-muted small mb-0">Exam Title</label>
+                <div class="fw-bold fs-6" id="detail_title"></div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small mb-0">Status</label>
+                <div id="detail_status"></div>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label fw-bold text-muted small mb-0">Description</label>
+                <div class="small" id="detail_desc"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-muted small mb-0">Question Bank</label>
+                <div id="detail_bank"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-muted small mb-0">Duration</label>
+                <div id="detail_duration"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-muted small mb-0">Start Time</label>
+                <div id="detail_start"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-muted small mb-0">End Time</label>
+                <div id="detail_end"></div>
+            </div>
+            <hr class="my-2">
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small mb-0">Passing Marks</label>
+                <div class="fw-bold" id="detail_pass"></div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small mb-0">Weight / Question</label>
+                <div class="fw-bold" id="detail_weight"></div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small mb-0">Negative Marking</label>
+                <div class="fw-bold" id="detail_neg"></div>
+            </div>
+            <hr class="my-2">
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-muted small mb-0">Assigned</label>
+                <div class="fw-bold fs-5" id="detail_assigned"></div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-muted small mb-0">Submitted</label>
+                <div class="fw-bold fs-5" id="detail_submitted"></div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-muted small mb-0">Absent</label>
+                <div class="fw-bold fs-5 text-danger" id="detail_absent"></div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-muted small mb-0">Pass Rate</label>
+                <div class="fw-bold fs-5" id="detail_passrate"></div>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Close</button>
+        <a class="btn btn-primary" id="detail_results_link" style="display:none;"><i class="bi bi-bar-chart-line me-1"></i>View Results</a>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const examModal = new bootstrap.Modal(document.getElementById('modalExam'));
-
-    let timeUpdateInterval;
-    function updateMinTime() {
-        const examId = document.getElementById('exam_id').value;
-        if (!examId || examId === "") {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('exam_start').setAttribute('min', now.toISOString().slice(0, 16));
-        }
-    }
 
     window.openAddExamModal = function() {
         document.getElementById('examModalTitle').textContent = "Schedule New Exam";
@@ -339,15 +454,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('exam_weight').value = "1.0";
         document.getElementById('exam_neg').value = "0.0";
         
-        updateMinTime();
-        if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-        timeUpdateInterval = setInterval(updateMinTime, 30000); 
         examModal.show();
     }
-
-    document.getElementById('modalExam').addEventListener('hidden.bs.modal', function () {
-        if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-    });
 
     window.openEditExamModal = function(e) {
         document.getElementById('examModalTitle').textContent = "Edit Exam Schedule";
@@ -356,11 +464,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('exam_bank').value = e.bank_id;
         document.getElementById('exam_group').value = e.group_id;
         document.getElementById('exam_desc').value = e.description;
-        // Convert SQL datetime to datetime-local format (YYYY-MM-DDTHH:MM)
         const dt = e.start_time.replace(' ', 'T').substring(0, 16);
         document.getElementById('exam_start').value = dt;
-        // For edits, we don't strictly enforce min time to avoid locking out legitimate minor adjustments
-        document.getElementById('exam_start').removeAttribute('min');
         document.getElementById('exam_duration').value = e.duration;
         document.getElementById('exam_pass').value = e.passing_marks;
         document.getElementById('exam_weight').value = e.question_weight;
@@ -379,57 +484,117 @@ document.addEventListener('DOMContentLoaded', function() {
         }).then((r) => { if(r.isConfirmed) window.location.href = `index.php?view=exams&delete_exam=${id}`; });
     }
 
+    const detailsModal = new bootstrap.Modal(document.getElementById('modalExamDetails'));
+
+    window.openExamDetailsModal = function(e) {
+        document.getElementById('detail_title').textContent = e.title;
+        document.getElementById('detail_desc').textContent = e.description || 'No description';
+        document.getElementById('detail_bank').textContent = e.bank_name;
+        document.getElementById('detail_duration').textContent = e.duration + ' minutes';
+        document.getElementById('detail_pass').textContent = e.passing_marks;
+        document.getElementById('detail_weight').textContent = e.question_weight;
+        document.getElementById('detail_neg').textContent = e.negative_marking;
+
+        // Format dates
+        const fmtDate = (str) => {
+            const d = new Date(str.replace(' ', 'T'));
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + 
+                   d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        };
+        document.getElementById('detail_start').textContent = fmtDate(e.start_time);
+        document.getElementById('detail_end').textContent = fmtDate(e.end_time);
+
+        // Status
+        const now = new Date();
+        const startDt = new Date(e.start_time.replace(' ', 'T'));
+        const endDt = new Date(e.end_time.replace(' ', 'T'));
+        let statusHtml = '<span class="badge bg-secondary">Upcoming</span>';
+        if (now >= startDt && now <= endDt) statusHtml = '<span class="badge bg-success">Ongoing</span>';
+        else if (now > endDt) statusHtml = '<span class="badge bg-dark">Completed</span>';
+        document.getElementById('detail_status').innerHTML = statusHtml;
+
+        // Stats
+        const assigned = parseInt(e.assigned_count) || 0;
+        const submitted = parseInt(e.submitted_count) || 0;
+        const passed = parseInt(e.passed_count) || 0;
+        const absent = Math.max(0, assigned - submitted);
+        const passRate = assigned > 0 ? Math.round((passed / assigned) * 100) : 0;
+        const submissionRate = assigned > 0 ? Math.round((submitted / assigned) * 100) : 0;
+
+        document.getElementById('detail_assigned').textContent = assigned;
+        document.getElementById('detail_submitted').textContent = submitted + ' (' + submissionRate + '%)';
+        document.getElementById('detail_absent').textContent = absent;
+        document.getElementById('detail_passrate').innerHTML = passed + '/' + assigned + ' <span class="text-' + (passRate >= 40 ? 'success' : 'danger') + '">' + passRate + '%</span>';
+
+        // Results link (show only for completed exams)
+        const resultsLink = document.getElementById('detail_results_link');
+        if (now > endDt) {
+            resultsLink.href = 'index.php?view=scores&exam_id=' + e.exam_id;
+            resultsLink.style.display = '';
+        } else {
+            resultsLink.style.display = 'none';
+        }
+
+        detailsModal.show();
+    }
+
     // Form Validation logic
     const btnSaveExam = document.getElementById('btnSaveExam');
     function validateExamForm() {
         const title = document.getElementById('exam_title').value.trim();
         const bank = document.getElementById('exam_bank').value;
-        const group = document.getElementById('exam_group').value; // Can be empty for 'All'
         const start = document.getElementById('exam_start').value;
         const duration = parseFloat(document.getElementById('exam_duration').value);
         const pass = parseFloat(document.getElementById('exam_pass').value);
         const weight = parseFloat(document.getElementById('exam_weight').value);
         const neg = parseFloat(document.getElementById('exam_neg').value);
         
+        // Show/Hide errors below labels
+        const dErr = document.getElementById('err_duration');
+        const pErr = document.getElementById('err_pass');
+        const wErr = document.getElementById('err_weight');
+        const nErr = document.getElementById('err_neg');
+
+        if(dErr) dErr.style.display = (isNaN(duration) || duration >= 1) ? 'none' : 'block';
+        if(pErr) pErr.style.display = (isNaN(pass) || pass >= 1) ? 'none' : 'block';
+        if(wErr) wErr.style.display = (isNaN(weight) || weight >= 1) ? 'none' : 'block';
+        if(nErr) nErr.style.display = (isNaN(neg) || neg >= 0) ? 'none' : 'block';
+
         // Basic required check
         let isValid = title && bank && start && !isNaN(duration) && !isNaN(pass) && !isNaN(weight) && !isNaN(neg);
 
-        // Value checks
+        // Value checks (logic for disabling button)
         if (duration < 1) isValid = false;
-        if (pass < 0) isValid = false;
-        if (weight <= 0) isValid = false;
+        if (pass < 1) isValid = false;
+        if (weight < 1) isValid = false;
         if (neg < 0) isValid = false;
-
-        // Date check: For new exams, start time must be in the future
-        const examId = document.getElementById('exam_id').value;
-        const timeError = document.getElementById('time-error');
-        if (!examId || examId === "") {
-            if (start) {
-                const now = new Date();
-                const selectedDate = new Date(start);
-                if (selectedDate <= now) {
-                    isValid = false;
-                    if (timeError) {
-                        timeError.textContent = "Start time must be in the future";
-                        timeError.style.display = "block";
-                    }
-                    document.getElementById('exam_start').classList.add('is-invalid');
-                } else {
-                    if (timeError) timeError.style.display = "none";
-                    document.getElementById('exam_start').classList.remove('is-invalid');
-                }
-            }
-        }
 
         if(btnSaveExam) {
             btnSaveExam.disabled = !isValid;
-            if(!isValid) {
-                // optional: add visual feedback or tooltip
-            }
         }
     }
 
     document.getElementById('modalExam').addEventListener('input', validateExamForm);
     document.getElementById('modalExam').addEventListener('shown.bs.modal', validateExamForm);
+
+    // Auto-open modal if requested via URL (to ensure fresh server time)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('open_modal') === '1') {
+        openAddExamModal();
+        const newUrl = window.location.pathname + window.location.search.replace(/[&?]open_modal=1/, '');
+        window.history.replaceState({}, '', newUrl);
+    }
+
+    const editId = urlParams.get('edit_id');
+    if (editId) {
+        // Find the exam data in the JS array passed from PHP
+        const examsJson = <?= json_encode($exams) ?>;
+        const examToEdit = examsJson.find(x => x.exam_id == editId);
+        if (examToEdit) {
+            openEditExamModal(examToEdit);
+        }
+        const newUrl = window.location.pathname + window.location.search.replace(/[&?]edit_id=\d+/, '');
+        window.history.replaceState({}, '', newUrl);
+    }
 });
 </script>

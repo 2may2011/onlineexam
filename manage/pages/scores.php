@@ -14,7 +14,8 @@ $res_exams_list = mysqli_query($conn, $q_exams_list);
 
 if ($exam_filter) {
     // --- DETAILED VIEW (Individual Students) ---
-    $q_scores = "SELECT s.*, e.title as exam_title, e.passing_marks, st.name, CONCAT(COALESCE(p.prefix_name,''), st.studentid) as stud_code
+    $q_scores = "SELECT s.*, e.title as exam_title, e.passing_marks, st.name, CONCAT(COALESCE(p.prefix_name,''), st.studentid) as stud_code,
+                 (SELECT COUNT(*) FROM questions q WHERE q.bank_id = e.bank_id) * e.question_weight as total_marks
                  FROM exam_submissions s 
                  JOIN exams e ON s.exam_id = e.exam_id 
                  JOIN students st ON s.student_id = st.id 
@@ -32,6 +33,7 @@ if ($exam_filter) {
     // --- SUMMARY VIEW (List of Exams) ---
     // Aggregates: Total Participants, Passed, Failed, Avg Score
     $q_summary = "SELECT e.exam_id, e.title, e.start_time, e.end_time,
+                  (SELECT COUNT(*) FROM questions q WHERE q.bank_id = e.bank_id) * e.question_weight as total_marks,
                   (SELECT COUNT(*) FROM exam_submissions WHERE exam_id = e.exam_id AND status = 'submitted') as total_participated,
                   (SELECT COUNT(*) FROM exam_submissions WHERE exam_id = e.exam_id AND status = 'submitted' AND score >= e.passing_marks) as total_passed,
                   (SELECT AVG(score) FROM exam_submissions WHERE exam_id = e.exam_id AND status = 'submitted') as avg_score
@@ -95,7 +97,8 @@ if ($exam_filter) {
                     <!-- SUMMARY ROW LOOP -->
                     <?php if(mysqli_num_rows($res_summary) > 0): while($row = mysqli_fetch_assoc($res_summary)): 
                         $rate = ($row['total_participated'] > 0) ? round(($row['total_passed'] / $row['total_participated']) * 100, 1) : 0;
-                        $avg = round((float)$row['avg_score'], 1);
+                        $total_m = (float)$row['total_marks'] ?: 1;
+                        $avg_pct = round(((float)$row['avg_score'] / $total_m) * 100, 1);
                     ?>
                     <tr>
                         <td class="fw-semibold">
@@ -110,9 +113,9 @@ if ($exam_filter) {
                         <td>
                             <div class="d-flex align-items-center gap-2" style="max-width:150px">
                                 <div class="progress flex-grow-1" style="height: 6px;">
-                                    <div class="progress-bar bg-primary" style="width: <?= $avg ?>%"></div>
+                                    <div class="progress-bar bg-primary" style="width: <?= $avg_pct ?>%"></div>
                                 </div>
-                                <span class="small fw-bold"><?= $avg ?>%</span>
+                                <span class="small fw-bold"><?= $avg_pct ?>%</span>
                             </div>
                         </td>
                         <td class="text-end">
@@ -132,8 +135,12 @@ if ($exam_filter) {
                         <td class="fw-bold"><?= htmlspecialchars($s['name']) ?></td>
                         <td class="small muted"><?= htmlspecialchars($s['stud_code']) ?></td>
                         <td>
+                            <?php 
+                                $total_m = (float)$s['total_marks'] ?: 1;
+                                $score_pct = round(($s['score'] / $total_m) * 100, 1);
+                            ?>
                             <span class="fw-bold <?= ($s['score'] >= $s['passing_marks']) ? 'text-success' : 'text-danger' ?>">
-                                <?= $s['score'] ?>%
+                                <?= $score_pct ?>% <small class="text-muted">(<?= $s['score'] ?>/<?= $total_m ?>)</small>
                             </span>
                         </td>
                         <td>
