@@ -7,6 +7,19 @@ require_once __DIR__ . "/includes/auth.php";
 
 require_student_login();
 
+// Auto-sync exam statuses and submissions
+if (isset($conn)) {
+    $conn->query("UPDATE exams SET status = 'upcoming' WHERE start_time > NOW()");
+    $conn->query("UPDATE exams SET status = 'ongoing' WHERE NOW() BETWEEN start_time AND end_time");
+    $conn->query("UPDATE exams SET status = 'completed' WHERE end_time < NOW()");
+
+    // Auto-submit ongoing entries for finished exams
+    $conn->query("UPDATE exam_submissions es 
+                  JOIN exams e ON es.exam_id = e.exam_id 
+                  SET es.status = 'submitted', es.end_time = e.end_time 
+                  WHERE es.status = 'ongoing' AND e.end_time < NOW()");
+}
+
 $view = $_GET['view'] ?? 'dashboard';
 $valid_views = ['dashboard', 'exams', 'profile', 'history', 'upcoming'];
 if (!in_array($view, $valid_views)) $view = 'dashboard';

@@ -70,8 +70,8 @@ $profile = $stmt->get_result()->fetch_assoc();
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center p-4">
                 <div class="mb-3">
-                    <div class="d-inline-flex bg-primary bg-opacity-10 text-primary rounded-circle align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                        <span class="fs-1 fw-bold"><?= strtoupper(substr($profile['name'], 0, 1)) ?></span>
+                    <div class="text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="bi bi-person-circle" style="font-size: 5rem;"></i>
                     </div>
                 </div>
                 <h5 class="fw-bold mb-1"><?= htmlspecialchars($profile['name']) ?></h5>

@@ -39,8 +39,8 @@
     <div class="mt-auto border-top p-3">
         <!-- User Profile (Optional, or just show text) -->
         <div class="d-flex align-items-center mb-3 px-2">
-            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px;">
-                <?= strtoupper(substr($_SESSION['student_name'] ?? 'U', 0, 1)) ?>
+            <div class="text-primary me-2">
+                <i class="bi bi-person-fill fs-4"></i>
             </div>
             <div class="text-truncate small text-secondary" style="max-width: 140px;">
                 <?= htmlspecialchars($_SESSION['student_name'] ?? 'Student') ?>

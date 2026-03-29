@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['end_exam_id'])) {
 
 $now = date('Y-m-d H:i:s');
 $q_live = "SELECT e.*, qb.bank_name,
-           (SELECT COUNT(*) FROM students WHERE (e.group_id IS NULL OR group_id = e.group_id)) as total_assigned,
+           (SELECT COUNT(*) FROM exam_assignments WHERE exam_id = e.exam_id) as total_assigned,
            (SELECT COUNT(*) FROM exam_submissions WHERE exam_id = e.exam_id AND status = 'ongoing') as active_now,
            (SELECT COUNT(*) FROM exam_submissions WHERE exam_id = e.exam_id AND status = 'submitted') as finished
            FROM exams e

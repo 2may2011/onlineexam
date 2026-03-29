@@ -137,14 +137,17 @@ if ($exam_filter) {
                         <td>
                             <?php 
                                 $total_m = (float)$s['total_marks'] ?: 1;
-                                $score_pct = round(($s['score'] / $total_m) * 100, 1);
+                                $obt = (float)$s['score'];
+                                $score_pct = round(($obt / $total_m) * 100, 1);
+                                $pass_m = (float)$s['passing_marks'];
+                                $is_passed = ($obt >= $pass_m);
                             ?>
-                            <span class="fw-bold <?= ($s['score'] >= $s['passing_marks']) ? 'text-success' : 'text-danger' ?>">
-                                <?= $score_pct ?>% <small class="text-muted">(<?= $s['score'] ?>/<?= $total_m ?>)</small>
+                            <span class="fw-bold <?= $is_passed ? 'text-success' : 'text-danger' ?>">
+                                <?= $score_pct ?>% <small class="text-muted">(<?= number_format($obt, 2) ?>/<?= number_format($total_m, 2) ?>)</small>
                             </span>
                         </td>
                         <td>
-                            <?php if($s['score'] >= $s['passing_marks']): ?>
+                            <?php if($is_passed): ?>
                                 <span class="badge bg-success-subtle text-success border border-success-subtle">PASSED</span>
                             <?php else: ?>
                                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle">FAILED</span>

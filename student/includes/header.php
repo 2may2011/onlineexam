@@ -11,7 +11,7 @@
 
     :root {
         --header-height: 60px;
-        --sidebar-width: 280px;
+        --sidebar-width: 224px;
         --theme-primary: #FFB800;
         --theme-bg: #E5E8EF;
         --theme-shade: #002583;

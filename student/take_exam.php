@@ -118,7 +118,13 @@ $timeLeft = $end - time();
     <div class="container d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-0 fw-bold"><?= htmlspecialchars($exam['title']) ?></h5>
-            <div class="small text-white-50"><?= htmlspecialchars($exam['bank_name']) ?></div>
+            <div class="d-flex gap-3 small text-white-50 mt-1" style="font-size: 0.8rem;">
+                <span><i class="bi bi-journal-text me-1"></i><?= htmlspecialchars($exam['bank_name']) ?></span>
+                <span title="Marks per correct answer"><i class="bi bi-plus-circle me-1"></i><?= $exam['question_weight'] ?>/Q</span>
+                <?php if((float)$exam['negative_marking'] > 0): ?>
+                    <span title="Negative marks per incorrect answer" class="text-warning"><i class="bi bi-dash-circle me-1"></i><?= $exam['negative_marking'] ?></span>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="text-center">
             <div class="small text-white-50">Time Remaining</div>
