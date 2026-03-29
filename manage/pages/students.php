@@ -94,7 +94,10 @@ if (isset($_POST["action"]) && $_POST["action"] === "reset_pass") {
 $msg = "";
 $err = "";
 if(isset($_GET['status'])) {
-    if($_GET['status'] == 'deleted') $msg = "Student removed successfully.";
+    if($_GET['status'] == 'deleted') {
+        $cnt = (int)($_GET['count'] ?? 1);
+        $msg = $cnt > 1 ? "Successfully removed $cnt students." : "Student removed successfully.";
+    }
     if($_GET['status'] == 'reset_success') $msg = "Password reset successfully.";
 }
 
@@ -231,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 if (isset($_GET["del"])) {
     $delId = (int)$_GET["del"];
     $conn->query("DELETE FROM students WHERE id=$delId");
-    echo "<script>location.href='index.php?view=students&status=deleted';</script>"; 
+    header("Location: index.php?view=students&status=deleted&count=1");
     exit;
 }
 
@@ -818,16 +821,11 @@ function fetchStudents() {
     const params = new URLSearchParams(formData);
     params.set('action', 'ajax_filter');
     
-    // UI Feedback: Fade table
-    const tableBody = document.getElementById('studentsTableBody');
-    if (tableBody) tableBody.style.opacity = '0.5';
-
     fetch('pages/students.php?' + params.toString())
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success' && tableBody) {
             tableBody.innerHTML = data.rows;
-            tableBody.style.opacity = '1';
             
             // Update counts
             const countDiv = document.querySelector('.muted.small');
@@ -943,12 +941,11 @@ function updateBulkActionsUI() {
 function handleBulkDelete() {
     const selected = document.querySelectorAll('.student-checkbox:checked');
     const ids = Array.from(selected).map(cb => cb.getAttribute('data-id'));
-    
     if (ids.length === 0) return;
 
     Swal.fire({
         title: 'Bulk Delete Students?',
-        text: `Are you sure you want to remove ${ids.length} selected students? This cannot be undone.`,
+        text: `Remove ${ids.length} selected students?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
@@ -956,12 +953,6 @@ function handleBulkDelete() {
         confirmButtonText: 'Yes, delete all'
     }).then((result) => {
         if (result.isConfirmed) {
-            Swal.fire({
-                title: 'Deleting...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
             const fd = new FormData();
             fd.append('action', 'bulk_delete');
             ids.forEach(id => fd.append('ids[]', id));
@@ -970,9 +961,7 @@ function handleBulkDelete() {
             .then(r => r.json())
             .then(res => {
                 if (res.status === 'success') {
-                    Swal.fire('Deleted!', `${res.count} students have been removed.`, 'success').then(() => {
-                        location.reload();
-                    });
+                    window.location.href = `index.php?view=students&status=deleted&count=${res.count}`;
                 } else {
                     Swal.fire('Error', res.message, 'error');
                 }
