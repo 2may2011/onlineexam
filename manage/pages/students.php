@@ -350,7 +350,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-0">Student Directory</h3>
-                    <div class="text-muted small">Manage student profiles, registrations, and IDs</div>
+                    <div class="text-muted small">Administer student profiles, registrations, and IDs</div>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-danger d-none" id="btnBulkDelete" onclick="handleBulkDelete()">

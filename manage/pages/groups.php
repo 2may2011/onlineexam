@@ -80,7 +80,7 @@ while($row = mysqli_fetch_assoc($res)) $groups[] = $row;
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold mb-0">Group Management</h3>
+                    <h3 class="fw-bold mb-0">Admin - Groups</h3>
                     <div class="text-muted small">Organize students into academic classes and testing groups</div>
                 </div>
                 <button class="btn btn-primary" onclick="openAddGroupModal()">

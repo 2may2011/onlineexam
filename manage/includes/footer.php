@@ -1,5 +1,5 @@
 <?php
-// admin/includes/footer.php
+// manage/includes/footer.php
 ?>
   </div> <!-- /.content -->
 </div> <!-- /.app -->

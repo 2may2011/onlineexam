@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Manage Login • Online Exam Portal</title>
+  <title>Admin Login | Online Exam Portal</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <div class="text-center mb-3">
         <i class="bi bi-shield-lock fs-1 text-primary"></i>
         <div class="fw-bold fs-4">Online Exam Portal</div>
-        <div class="text-secondary">Manage Login</div>
+        <div class="text-secondary">Admin Login</div>
       </div>
 
       <div class="card p-4">

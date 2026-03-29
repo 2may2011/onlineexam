@@ -129,7 +129,7 @@ if (!$q_res && !isset($db_error)) {
   <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
           <h3 class="fw-bold mb-0"><?= $filter_bank ? 'Questions: ' . htmlspecialchars($banks[array_search($filter_bank, array_column($banks, 'bank_id'))]['bank_name'] ?? 'Library') : 'Question Library' ?></h3>
-          <div class="text-muted small"><?= $filter_bank ? 'Manage, edit, and organize questions within this bank' : 'Select a question bank to manage its content' ?></div>
+          <div class="text-muted small"><?= $filter_bank ? 'Administer, edit, and organize questions within this bank' : 'Select a question bank to administer its content' ?></div>
       </div>
       <div class="d-flex gap-2">
           <?php if($filter_bank): ?>

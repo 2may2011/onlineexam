@@ -163,7 +163,7 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
     <div class="card p-3">
       <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
         <div>
-          <h3 class="fw-bold mb-0">Exam Management</h3>
+          <h3 class="fw-bold mb-0">Admin - Exams</h3>
           <div class="text-muted small">Schedule and manage examinations settings and timings</div>
         </div>
         <button class="btn btn-primary" onclick="window.location.href='index.php?view=exams&open_modal=1'">

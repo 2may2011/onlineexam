@@ -211,7 +211,7 @@ if ($res) {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h5 class="fw-bold mb-0">Student ID Prefixes</h5>
-                    <p class="small text-muted mb-0">Manage allowed prefixes for student IDs.</p>
+                    <p class="small text-muted mb-0">Administer allowed prefixes for student IDs.</p>
                 </div>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPrefixModal">
                     <i class="bi bi-plus-lg me-1"></i>Add New Prefix

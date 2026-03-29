@@ -17,7 +17,7 @@ if (isset($conn)) {
 }
 
 $activeView = $_GET["view"] ?? "dashboard";
-$valid = ["dashboard","banks","questions","students","groups","exams","live","scores","settings"];
+$valid = ["dashboard","questions","students","groups","exams","live","scores","settings"];
 if (!in_array($activeView, $valid, true)) $activeView = "dashboard";
 ?>
 <!doctype html>
@@ -25,7 +25,7 @@ if (!in_array($activeView, $valid, true)) $activeView = "dashboard";
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Online Exam Portal • Manage</title>
+  <title>Admin Dashboard | Online Exam Portal</title>
 
   <!-- Bootstrap + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -103,10 +103,6 @@ if (!in_array($activeView, $valid, true)) $activeView = "dashboard";
         opacity: 1 !important;
     }
 
-    @media (max-width: 991.98px){ 
-        .sidebar { display:none; } 
-        .content { width: 100%; margin-left: 0; }
-    }
   </style>
 </head>
 

@@ -306,11 +306,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const scoreCtx = document.getElementById('scoreDistChart').getContext('2d');
 
     const barColors = [
-        { from: '#f43f5e', to: '#fb7185', label: 'Very Poor' }, // 0-20 (Rose)
-        { from: '#fb923c', to: '#fdba74', label: 'Below Average' }, // 21-40 (Orange)
-        { from: '#fbbf24', to: '#fcd34d', label: 'Average' }, // 41-60 (Amber)
-        { from: '#0ea5e9', to: '#7dd3fc', label: 'Good' }, // 61-80 (Sky)
-        { from: '#10b981', to: '#6ee7b7', label: 'Excellent' } // 81-100 (Emerald)
+        { from: '#f43f5e', to: '#fb7185', label: 'Very Poor' },
+        { from: '#fb923c', to: '#fdba74', label: 'Below Average' },
+        { from: '#fbbf24', to: '#fcd34d', label: 'Average' },
+        { from: '#0ea5e9', to: '#7dd3fc', label: 'Good' },
+        { from: '#10b981', to: '#6ee7b7', label: 'Excellent' }
     ];
 
     const gradients = barColors.map(c => {
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            animation: { duration: 1000, easing: 'easeOutQuart', delay: (ctx) => ctx.dataIndex * 100 },
+            animation: { duration: 1000, easing: 'easeOutQuart' },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -382,7 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             maintainAspectRatio: true,
             cutout: '72%',
-            animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' },
+            animation: { animateRotate: true, duration: 1000, easing: 'easeOutQuart' },
+            layout: { padding: 12 },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -439,7 +440,8 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             maintainAspectRatio: true,
             cutout: '72%',
-            animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart', delay: 200 },
+            animation: { animateRotate: true, duration: 1000, easing: 'easeOutQuart' },
+            layout: { padding: 12 },
             plugins: {
                 legend: { display: false },
                 tooltip: {
