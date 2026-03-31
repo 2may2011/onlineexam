@@ -36,7 +36,11 @@ if ($exam_id > 0) {
                 <a href="index.php?view=history" class="text-decoration-none small text-muted"><i class="bi bi-arrow-left me-1"></i> Back to History</a>
                 <h4 class="fw-bold mt-1">Exam Result: <?= htmlspecialchars($result['title']) ?></h4>
             </div>
-            <button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print</button>
+            <div class="d-flex gap-2">
+                <a href="index.php?view=review&submission_id=<?= $result['submission_id'] ?>" class="btn btn-primary btn-sm">
+                    <i class="bi bi-search me-1"></i> Review My Answers
+                </a>
+            </div>
         </div>
 
         <div class="col-md-4">
@@ -123,10 +127,7 @@ if ($exam_id > 0) {
                     </div>
                 </div>
                 
-                <div class="mt-5 text-center text-muted py-4 border-top border-light">
-                    <i class="bi bi-info-circle mb-2 fs-4"></i>
-                    <p class="mb-0 small">Detailed question-by-question review is currently managed by administrators.</p>
-                </div>
+
             </div>
         </div>
     </div>

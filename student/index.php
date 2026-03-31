@@ -23,7 +23,7 @@ if (isset($conn)) {
 }
 
 $view = $_GET['view'] ?? 'dashboard';
-$valid_views = ['dashboard', 'exams', 'profile', 'history', 'upcoming'];
+$valid_views = ['dashboard', 'exams', 'profile', 'history', 'upcoming', 'review'];
 if (!in_array($view, $valid_views)) $view = 'dashboard';
 
 require_once __DIR__ . "/includes/header.php";
