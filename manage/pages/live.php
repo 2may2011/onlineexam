@@ -56,7 +56,7 @@ $res_live = mysqli_query($conn, $q_live);
                         </div>
 
                         <div class="small muted mb-1 d-flex justify-content-between">
-                            <span>Time Progress</span>
+                            <span>Started at <?= date('g:i A', strtotime($l['start_time'])) ?></span>
                             <span>Ends at <?= date('g:i A', strtotime($l['end_time'])) ?></span>
                         </div>
                         <?php
@@ -70,7 +70,11 @@ $res_live = mysqli_query($conn, $q_live);
                             <div class="progress-bar bg-danger" role="progressbar" style="width: <?= $percent ?>%"></div>
                         </div>
                         
-                        <div class="text-end">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#viewStudents_<?= $l['exam_id'] ?>">
+                                <i class="bi bi-people me-1"></i> View Students
+                            </button>
+
                             <form method="POST" onsubmit="return confirm('Force end this exam? This will close access immediately.');">
                                 <input type="hidden" name="end_exam_id" value="<?= $l['exam_id'] ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" <?= $canEnd ? '' : 'disabled' ?>>
@@ -78,6 +82,70 @@ $res_live = mysqli_query($conn, $q_live);
                                 </button>
                             </form>
                         </div>
+
+                        <!-- Student List Collapse -->
+                        <div class="collapse mt-3" id="viewStudents_<?= $l['exam_id'] ?>">
+                            <div class="card card-body border-0 shadow-sm p-0" style="background-color: #fff;">
+                                <div style="max-height: 250px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th class="ps-3 border-0">Symbol No</th>
+                                                <th class="border-0">Name</th>
+                                                <th class="border-0 text-center">Started</th>
+                                                <th class="border-0 text-end pe-3">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                            $q_students = "SELECT s.id, s.name as full_name, s.studentid as roll_no, p.prefix_name, es.status as sub_status, es.start_time, es.submission_id
+                                                           FROM exam_assignments ea
+                                                           JOIN students s ON ea.student_id = s.id
+                                                           LEFT JOIN student_prefixes p ON s.prefix_id = p.id
+                                                           LEFT JOIN exam_submissions es ON (ea.exam_id = es.exam_id AND ea.student_id = es.student_id)
+                                                           WHERE ea.exam_id = " . (int)$l['exam_id'] . " ORDER BY s.studentid";
+                                            $res_st = mysqli_query($conn, $q_students);
+                                            if($res_st && mysqli_num_rows($res_st) > 0):
+                                                while($st = mysqli_fetch_assoc($res_st)):
+                                                    if($st['sub_status'] === 'ongoing') {
+                                                        $st_badge = '<span class="badge bg-primary">Active</span>';
+                                                    } elseif($st['sub_status'] === 'submitted') {
+                                                        $st_badge = '<span class="badge bg-success">Finished</span>';
+                                                    } else {
+                                                        $st_badge = '<span class="badge border text-muted" style="background: #f8f9fa;">Not Started</span>';
+                                                    }
+                                            ?>
+                                            <tr>
+                                                <td class="ps-3 align-middle"><?= htmlspecialchars(($st['prefix_name'] ?? '') . $st['roll_no']) ?></td>
+                                                <td class="align-middle fw-medium"><?= htmlspecialchars($st['full_name']) ?></td>
+                                                <td class="text-center align-middle">
+                                                    <?php if($st['start_time']): ?>
+                                                        <span class="small text-muted"><?= date('h:i A', strtotime($st['start_time'])) ?></span>
+                                                    <?php else: ?>
+                                                        <span class="text-muted small">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="text-end pe-3 align-middle">
+                                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                                        <?php if($st['sub_status'] === 'submitted'): ?>
+                                                            <a href="index.php?view=review&submission_id=<?= $st['submission_id'] ?>" class="btn btn-xs btn-outline-dark py-0 px-2" title="Review Detail" style="font-size:0.7rem">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                        <?php endif; ?>
+                                                        <?= $st_badge ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php endwhile; else: ?>
+                                            <tr><td colspan="3" class="text-center text-muted py-3">No students assigned.</td></tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End Student List -->
+
                     </div>
                 </div>
                 <?php endwhile; else: ?>

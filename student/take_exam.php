@@ -101,9 +101,9 @@ $timeLeft = $end - time();
     body { background: var(--theme-bg); user-select: none; }
     .exam-header { background: var(--theme-shade); color: white; padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
     .timer { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.5rem; color: #FFB800; }
-    .question-card { border: 0; border-radius: 12px; transition: all 0.3s; margin-bottom: 2rem; }
+    .question-card { border: 0; border-radius: 10px; transition: all 0.3s; margin-bottom: 1.25rem; }
     .question-card.answered { opacity: 0.85; pointer-events: none; border-left: 4px solid #10b981; }
-    .option-btn { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px; cursor: pointer; transition: 0.2s; background: white; }
+    .option-btn { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; cursor: pointer; transition: 0.2s; background: white; font-size: 0.95rem; }
     .option-btn:hover { background: #f8fafc; border-color: var(--theme-shade); }
     .option-btn.selected { background: var(--theme-shade); border-color: var(--theme-shade); color: white; }
     .option-radio { display: none; }
@@ -118,50 +118,72 @@ $timeLeft = $end - time();
     <div class="container d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-0 fw-bold"><?= htmlspecialchars($exam['title']) ?></h5>
-            <div class="d-flex gap-3 small text-white-50 mt-1" style="font-size: 0.8rem;">
-                <span><i class="bi bi-journal-text me-1"></i><?= htmlspecialchars($exam['bank_name']) ?></span>
-                <span title="Marks per correct answer"><i class="bi bi-plus-circle me-1"></i><?= $exam['question_weight'] ?>/Q</span>
-                <?php if((float)$exam['negative_marking'] > 0): ?>
-                    <span title="Negative marks per incorrect answer" class="text-warning"><i class="bi bi-dash-circle me-1"></i><?= $exam['negative_marking'] ?></span>
-                <?php endif; ?>
-            </div>
         </div>
-        <div class="text-center">
-            <div class="small text-white-50">Time Remaining</div>
-            <div id="countdown" class="timer">00:00:00</div>
+        <div class="d-flex gap-4 text-center">
+            <div>
+                <div class="small text-white-50">Warnings</div>
+                <div id="warnings-display" class="timer text-danger">0 / 3</div>
+            </div>
+            <div>
+                <div class="small text-white-50">Time Remaining</div>
+                <div id="countdown" class="timer">00:00:00</div>
+            </div>
         </div>
         <button class="btn btn-danger btn-sm px-4" onclick="confirmSubmit()">Finish Exam</button>
     </div>
 </header>
 
-<main class="container py-5">
+<main class="container py-4">
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
+            
+            <!-- Exam Details Card -->
+            <div class="card shadow-sm border-0 mb-4" style="border-radius: 10px; background-color: #f8f9fa;">
+                <div class="card-body p-3 small text-muted">
+                    <div class="row align-items-center">
+                        <?php if(!empty($exam['description'])): ?>
+                        <div class="col-md-12 mb-2">
+                            <strong>Description:</strong> <?= htmlspecialchars($exam['description']) ?>
+                        </div>
+                        <?php endif; ?>
+                        <div class="col-12">
+                            <ul class="list-inline mb-0 d-flex gap-3 flex-wrap">
+                                <li class="list-inline-item m-0"><strong>Total Questions:</strong> <?= count($questions) ?></li>
+                                <li class="list-inline-item m-0"><strong>Passing Marks:</strong> <?= $exam['passing_marks'] ?></li>
+                                <li class="list-inline-item m-0"><strong>Marks/Question:</strong> <?= $exam['question_weight'] ?></li>
+                                <?php if((float)$exam['negative_marking'] > 0): ?>
+                                <li class="list-inline-item m-0 text-danger"><strong>Negative Marking:</strong> <?= $exam['negative_marking'] ?></li>
+                                <?php endif; ?>
+                                <li class="list-inline-item m-0"><strong>Duration:</strong> <?= $exam['duration'] ?> mins</li>
+                                <li class="list-inline-item m-0"><strong>Ends At:</strong> <?= date('g:i A', strtotime($exam['end_time'])) ?></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <?php foreach ($questions as $idx => $q): 
                 $isAnswered = !empty($q['selected_option']);
             ?>
             <div class="card question-card shadow-sm <?= $isAnswered ? 'answered' : '' ?>" id="q-<?= $q['question_id'] ?>">
-                <div class="card-body p-4 p-md-5">
-                    <div class="d-flex gap-3 mb-4">
-                        <span class="badge bg-primary rounded-pill h-100 py-2 px-3">Question <?= $idx + 1 ?></span>
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <span class="badge bg-primary rounded-pill px-2 py-1 mt-1" style="font-size: 0.75rem;">Q <?= $idx + 1 ?></span>
+                        <div class="fw-bold" style="font-size: 1.05rem;"><?= nl2br(htmlspecialchars($q['question_text'])) ?></div>
                     </div>
-                    <h5 class="fw-bold mb-4"><?= nl2br(htmlspecialchars($q['question_text'])) ?></h5>
                     
-                    <div class="row g-3">
+                    <div class="row g-2 ps-md-4">
                         <?php foreach ($q['shuffled_options'] as $oIdx => $opt): 
                             $isSelected = ($q['selected_option'] === $opt['key']);
                             $displayLabel = chr(65 + $oIdx); // 0->A, 1->B, 2->C, 3->D
                         ?>
                         <div class="col-12 col-md-6">
-                            <label class="option-btn d-flex align-items-center gap-2 <?= $isSelected ? 'selected' : '' ?>">
+                            <label class="option-btn d-flex align-items-start gap-2 mb-0 <?= $isSelected ? 'selected' : '' ?>">
                                 <input type="radio" class="option-radio" name="ans_<?= $q['question_id'] ?>" value="<?= $opt['key'] ?>" 
                                        onchange="saveAnswer(<?= $q['question_id'] ?>, '<?= $opt['key'] ?>')" <?= $isAnswered ? 'disabled' : '' ?>>
-                                <span class="fw-bold"><?= $displayLabel ?>.</span>
+                                <span class="fw-bold text-muted mt-1" style="font-size: 0.85rem; line-height: 1.2;"><?= $displayLabel ?>.</span>
                                 
-                                <!-- Optional: Debug showing real key if needed, or just hidden -->
-                                <!-- <small class='text-muted'>(Real: <?= $opt['key'] ?>)</small> -->
-                                
-                                <span><?= htmlspecialchars($opt['val']) ?></span>
+                                <span class="ms-1" style="line-height: 1.4;"><?= htmlspecialchars($opt['val']) ?></span>
                             </label>
                         </div>
                         <?php endforeach; ?>
@@ -181,6 +203,7 @@ $timeLeft = $end - time();
 <script>
     let timeLeft = <?= $timeLeft ?>;
     const countdownEl = document.getElementById('countdown');
+    const warningDisplayEl = document.getElementById('warnings-display');
 
     function updateTimer() {
         if (timeLeft <= 0) {
@@ -188,11 +211,12 @@ $timeLeft = $end - time();
             return;
         }
         timeLeft--;
+
+        // Render Remaining
         const h = Math.floor(timeLeft / 3600);
         const m = Math.floor((timeLeft % 3600) / 60);
         const s = timeLeft % 60;
         countdownEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        
         if (timeLeft < 300) countdownEl.classList.add('text-danger');
     }
     setInterval(updateTimer, 1000);
@@ -248,6 +272,7 @@ $timeLeft = $end - time();
 
     function submitFinal() {
         window.onbeforeunload = null;
+        localStorage.removeItem('exam_warnings_<?= $submission_id ?>');
         window.location.href = 'submit_exam.php?id=<?= $submission_id ?>';
     }
 
@@ -255,6 +280,49 @@ $timeLeft = $end - time();
     window.onbeforeunload = function() {
         return "You have an ongoing examination. Are you sure you want to leave?";
     };
+
+    // --- Anti-Cheat Tab Switching Warning System ---
+    const warningKey = 'exam_warnings_<?= $submission_id ?>';
+    let warningCount = parseInt(localStorage.getItem(warningKey) || '0', 10);
+    
+    // Initial display
+    warningDisplayEl.textContent = `${warningCount} / 3`;
+
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            warningCount++;
+            localStorage.setItem(warningKey, warningCount);
+            warningDisplayEl.textContent = `${warningCount} / 3`;
+
+            if (warningCount >= 3) {
+                forceSubmit("Exam ended automatically due to multiple tab switches.");
+            } else {
+                Swal.fire({
+                    title: 'Warning!',
+                    text: `Tab switching or minimizing the browser is strictly prohibited. Strike ${warningCount}/3. On strike 3, your exam will be automatically submitted.`,
+                    icon: 'error',
+                    confirmButtonText: 'I Understand',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        }
+    });
+
+    function forceSubmit(reason) {
+        window.onbeforeunload = null;
+        localStorage.removeItem(warningKey);
+        Swal.fire({
+            title: 'Rule Violation',
+            text: reason,
+            icon: 'error',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            timer: 4000,
+            didOpen: () => Swal.showLoading()
+        }).then(() => {
+            window.location.href = 'submit_exam.php?id=<?= $submission_id ?>';
+        });
+    }
 </script>
 </body>
 </html>

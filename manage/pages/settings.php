@@ -113,7 +113,7 @@ if ($res) {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-0">System Settings</h3>
-                    <div class="text-muted small">Configure SMTP, application preferences, and ID prefixes</div>
+                    <div class="text-muted small">Configure SMTP, application preferences, and Symbol No prefixes</div>
                 </div>
                 <i class="bi bi-gear fs-4 text-primary"></i>
             </div>
@@ -122,7 +122,7 @@ if ($res) {
                 <div class="alert alert-success alert-dismissible fade show small mb-4" role="alert">
                     <?php 
                         if($_GET['success'] == '1') echo "Settings updated successfully!";
-                        elseif($_GET['success'] == 'prefix_added') echo "New student ID prefix added.";
+                        elseif($_GET['success'] == 'prefix_added') echo "New Symbol No prefix added.";
                         elseif($_GET['success'] == 'prefix_updated') echo "Prefix updated successfully.";
                         elseif($_GET['success'] == 'prefix_deleted') echo "Prefix removed successfully.";
                         else echo htmlspecialchars($_GET['success']);
@@ -210,8 +210,8 @@ if ($res) {
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h5 class="fw-bold mb-0">Student ID Prefixes</h5>
-                    <p class="small text-muted mb-0">Administer allowed prefixes for student IDs.</p>
+                    <h5 class="fw-bold mb-0">Symbol No Prefixes</h5>
+                    <p class="small text-muted mb-0">Administer allowed prefixes for Symbol numbers.</p>
                 </div>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPrefixModal">
                     <i class="bi bi-plus-lg me-1"></i>Add New Prefix
@@ -256,7 +256,7 @@ if ($res) {
     <div class="modal-dialog">
         <form class="modal-content" method="POST">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Add ID Prefix</h5>
+                <h5 class="modal-title fw-bold">Add Symbol Prefix</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -284,7 +284,7 @@ if ($res) {
         <form class="modal-content" method="POST">
             <input type="hidden" name="prefix_id" id="edit_pid">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Edit ID Prefix</h5>
+                <h5 class="modal-title fw-bold">Edit Symbol Prefix</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">

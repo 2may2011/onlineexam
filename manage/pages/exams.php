@@ -129,8 +129,8 @@ $groups_res = mysqli_query($conn, "SELECT group_id, group_name FROM `groups` ORD
 $groups = [];
 if($groups_res) while($g = mysqli_fetch_assoc($groups_res)) $groups[] = $g;
 
-// Fetch Banks for dropdown
-$banks_res = mysqli_query($conn, "SELECT bank_id, bank_name FROM question_banks ORDER BY bank_name");
+// Fetch Banks for dropdown with question counts
+$banks_res = mysqli_query($conn, "SELECT qb.bank_id, qb.bank_name, (SELECT COUNT(*) FROM questions WHERE bank_id = qb.bank_id) as q_count FROM question_banks qb ORDER BY bank_name");
 $banks = [];
 if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
 
@@ -301,10 +301,12 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Question Bank</label>
-                <select name="bank_id" id="exam_bank" class="form-select" required>
-                    <option value="">-- Select Bank --</option>
+                <select name="bank_id" id="exam_bank" class="form-select" required onchange="validateExamForm()">
+                    <option value="" data-questions="0">-- Select Bank --</option>
                     <?php foreach ($banks as $b): ?>
-                        <option value="<?= $b['bank_id'] ?>"><?= htmlspecialchars($b['bank_name']) ?></option>
+                        <option value="<?= $b['bank_id'] ?>" data-questions="<?= (int)$b['q_count'] ?>">
+                            <?= htmlspecialchars($b['bank_name']) ?> (<?= (int)$b['q_count'] ?> Qs)
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -330,6 +332,8 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
                 <label class="form-label fw-bold">Passing Marks</label>
                 <input type="number" step="0.1" name="passing_marks" id="exam_pass" class="form-control" min="1" required>
                 <div id="err_pass" class="text-danger small mt-1" style="display:none;">Must be at least 1</div>
+                <div id="err_pass_limit" class="text-danger small mt-1" style="display:none;">Cannot exceed <span id="max_marks_limit">0</span> (Max Possible)</div>
+                <div class="text-muted small mt-1">Max Possible Marks: <span id="max_possible_display" class="fw-bold">0</span></div>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Start Date & Time</label>
@@ -540,23 +544,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form Validation logic
     const btnSaveExam = document.getElementById('btnSaveExam');
-    function validateExamForm() {
+    window.validateExamForm = function() {
         const title = document.getElementById('exam_title').value.trim();
-        const bank = document.getElementById('exam_bank').value;
+        const bankSelect = document.getElementById('exam_bank');
+        const bank = bankSelect.value;
         const start = document.getElementById('exam_start').value;
         const duration = parseFloat(document.getElementById('exam_duration').value);
         const pass = parseFloat(document.getElementById('exam_pass').value);
         const weight = parseFloat(document.getElementById('exam_weight').value);
         const neg = parseFloat(document.getElementById('exam_neg').value);
+
+        // Get question count from selected option
+        const selectedOption = bankSelect.options[bankSelect.selectedIndex];
+        const questionCount = parseInt(selectedOption ? selectedOption.getAttribute('data-questions') : 0) || 0;
+        const maxPossible = (weight * questionCount).toFixed(1);
+
+        // Update UI displays
+        const maxPossibleDisplay = document.getElementById('max_possible_display');
+        const maxMarksLimit = document.getElementById('max_marks_limit');
+        if (maxPossibleDisplay) maxPossibleDisplay.textContent = maxPossible;
+        if (maxMarksLimit) maxMarksLimit.textContent = maxPossible;
         
-        // Show/Hide errors below labels
+        // Show/Hide error labels
         const dErr = document.getElementById('err_duration');
         const pErr = document.getElementById('err_pass');
+        const plErr = document.getElementById('err_pass_limit');
         const wErr = document.getElementById('err_weight');
         const nErr = document.getElementById('err_neg');
 
         if(dErr) dErr.style.display = (isNaN(duration) || duration >= 1) ? 'none' : 'block';
         if(pErr) pErr.style.display = (isNaN(pass) || pass >= 1) ? 'none' : 'block';
+        
+        const isPassOverLimit = (!isNaN(pass) && !isNaN(maxPossible) && pass > parseFloat(maxPossible));
+        if(plErr) plErr.style.display = isPassOverLimit ? 'block' : 'none';
+
         if(wErr) wErr.style.display = (isNaN(weight) || weight >= 1) ? 'none' : 'block';
         if(nErr) nErr.style.display = (isNaN(neg) || neg >= 0) ? 'none' : 'block';
 
@@ -566,6 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Value checks (logic for disabling button)
         if (duration < 1) isValid = false;
         if (pass < 1) isValid = false;
+        if (isPassOverLimit) isValid = false;
         if (weight < 1) isValid = false;
         if (neg < 0) isValid = false;
 

@@ -52,7 +52,10 @@ if ($exam_id > 0) {
                         <?= $passed ? 'PASSED' : 'FAILED' ?>
                     </span>
                 </div>
-                <div class="text-muted small">Submitted on <?= date('M d, Y h:i A', strtotime($result['end_time'] ?? '')) ?></div>
+                <div class="mt-3">
+                    <div class="text-muted small"><strong>Started:</strong> <?= date('M d, Y h:i:s A', strtotime($result['start_time'] ?? '')) ?></div>
+                    <div class="text-muted small"><strong>Submitted:</strong> <?= date('M d, Y h:i:s A', strtotime($result['end_time'] ?? '')) ?></div>
+                </div>
             </div>
 
             <!-- Exam Logistics/Rule Card -->
@@ -137,7 +140,7 @@ if ($exam_id > 0) {
             e.exam_id, e.title, e.start_time, e.end_time, e.passing_marks, e.question_weight, e.status as exam_status,
             qb.bank_name,
             (SELECT COUNT(*) FROM questions WHERE bank_id = e.bank_id) as total_q,
-            es.score, es.status as submission_status, es.end_time as submission_time
+            es.score, es.status as submission_status, es.end_time as submission_time, es.start_time as actual_start
         FROM exam_assignments ea
         JOIN exams e ON ea.exam_id = e.exam_id
         LEFT JOIN question_banks qb ON e.bank_id = qb.bank_id
@@ -190,7 +193,10 @@ if ($exam_id > 0) {
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="badge rounded-pill <?= $exam_badge ?> px-3 border"><?= ucfirst($exam_status) ?></span>
                             <div class="small text-muted">
-                                <?= date('M d, Y', strtotime($exam['start_time'])) ?>
+                                <?php 
+                                    $displayTime = $exam['actual_start'] ?: $exam['start_time'];
+                                    echo date('M d, Y h:i A', strtotime($displayTime));
+                                ?>
                             </div>
                         </div>
                         

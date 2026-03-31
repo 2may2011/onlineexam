@@ -15,15 +15,17 @@ if (isset($conn)) {
     $conn->query("UPDATE exams SET status = 'ongoing' WHERE NOW() BETWEEN start_time AND end_time");
     $conn->query("UPDATE exams SET status = 'completed' WHERE end_time < NOW()");
 
-    // Auto-submit ongoing entries for finished exams
+    // Auto-submit ongoing entries for finished exams and calculate final score
     $conn->query("UPDATE exam_submissions es 
                   JOIN exams e ON es.exam_id = e.exam_id 
-                  SET es.status = 'submitted', es.end_time = e.end_time 
+                  SET es.status = 'submitted', 
+                      es.end_time = e.end_time,
+                      es.score = COALESCE((SELECT SUM(marks) FROM student_answers sa WHERE sa.submission_id = es.submission_id), 0)
                   WHERE es.status = 'ongoing' AND e.end_time < NOW()");
 }
 
 $activeView = $_GET["view"] ?? "dashboard";
-$valid = ["dashboard","questions","students","groups","exams","live","scores","settings"];
+$valid = ["dashboard","questions","students","groups","exams","live","scores","settings","review"];
 if (!in_array($activeView, $valid, true)) $activeView = "dashboard";
 ?>
 <!doctype html>

@@ -85,10 +85,11 @@ if ($exam_filter) {
                 <?php else: ?>
                 <tr>
                     <th>Student Name</th>
-                    <th>Student ID</th>
+                    <th>Symbol No</th>
                     <th>Score</th>
                     <th>Result</th>
                     <th>Submission Time</th>
+                    <th class="text-end">Action</th>
                 </tr>
                 <?php endif; ?>
             </thead>
@@ -154,6 +155,11 @@ if ($exam_filter) {
                             <?php endif; ?>
                         </td>
                         <td class="small text-muted"><?= date('M d, H:i A', strtotime($s['end_time'])) ?></td>
+                        <td class="text-end">
+                            <a href="index.php?view=review&submission_id=<?= $s['submission_id'] ?>" class="btn btn-sm btn-outline-dark" title="Review Details">
+                                <i class="bi bi-search me-1"></i> Review
+                            </a>
+                        </td>
                     </tr>
                     <?php endwhile; else: ?>
                     <tr><td colspan="5" class="text-center py-5 muted">No student submissions found for this exam.</td></tr>

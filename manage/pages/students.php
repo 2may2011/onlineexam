@@ -423,7 +423,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
                                     <label class="form-check-label small fw-bold" for="selectAll" style="cursor:pointer">SELECT</label>
                                 </div>
                             </th>
-                            <th>Student ID</th>
+                            <th>Symbol No</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Group</th>
@@ -496,7 +496,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
         
         <div class="row mb-3 align-items-center">
             <div class="col-md-5">
-                <label class="form-label fw-bold small">Select ID Prefix</label>
+                <label class="form-label fw-bold small">Select Symbol Prefix</label>
                 <select name="prefix_id" id="idPrefixSelect" class="form-select" onchange="updateIdPreview()" required>
                     <?php if (empty($all_prefixes)): ?>
                         <option value="" disabled selected>No prefix available (Adjust in Settings)</option>
@@ -572,7 +572,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
             <input type="email" name="email" id="edit_email" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label class="form-label">Student ID</label>
+            <label class="form-label">Symbol No</label>
             <div class="input-group">
                 <select name="prefix_id" id="edit_prefix_id" class="form-select bg-light border-end-0" style="max-width: 140px;">
                     <?php foreach($all_prefixes as $p): ?>
