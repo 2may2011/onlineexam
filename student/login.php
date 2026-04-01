@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $identifier = trim($_POST['identifier']);
     $password = $_POST['password'];
 
-    // Try Email first, then Student ID (Prefix + ID)
+    // Try Email first, then Symbol No (Prefix + ID)
     $stmt = $conn->prepare("
         SELECT s.id, s.name, s.password 
         FROM students s
@@ -81,8 +81,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <?php endif; ?>
       <form method="POST">
         <div class="mb-3">
-          <label class="form-label small fw-bold">Email / Student ID</label>
-          <input type="text" name="identifier" class="form-control" placeholder="your-id or email@example.com" required>
+          <label class="form-label small fw-bold">Email / Symbol No</label>
+          <input type="text" name="identifier" class="form-control" placeholder="your-symbol-no or email@example.com" required>
         </div>
         <div class="mb-4">
           <label class="form-label small fw-bold">Password</label>

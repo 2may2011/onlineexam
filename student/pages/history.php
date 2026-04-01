@@ -36,8 +36,8 @@ if ($exam_id > 0) {
                 <a href="index.php?view=history" class="text-decoration-none small text-muted"><i class="bi bi-arrow-left me-1"></i> Back to History</a>
                 <h4 class="fw-bold mt-1">Exam Result: <?= htmlspecialchars($result['title']) ?></h4>
             </div>
-            <div class="d-flex gap-2">
-                <a href="index.php?view=review&submission_id=<?= $result['submission_id'] ?>" class="btn btn-primary btn-sm">
+             <div class="d-flex gap-2">
+                <a href="index.php?view=review&submission_id=<?= $result['submission_id'] ?>" class="btn btn-sm btn-outline-dark">
                     <i class="bi bi-search me-1"></i> Review My Answers
                 </a>
             </div>

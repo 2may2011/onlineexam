@@ -111,6 +111,20 @@ $timeLeft = $end - time();
     .btn-primary:hover { background-color: #D99E00 !important; border-color: #D99E00 !important; }
     .badge.bg-primary { background-color: var(--theme-shade) !important; }
   </style>
+  <script>
+    // Disable Right-Click
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    // Disable Shortcuts
+    document.onkeydown = function(e) {
+        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+        if (e.keyCode == 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+            (e.ctrlKey && e.keyCode == 85)) {
+            return false;
+        }
+    };
+  </script>
 </head>
 <body>
 

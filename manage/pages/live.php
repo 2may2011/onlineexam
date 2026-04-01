@@ -98,7 +98,7 @@ $res_live = mysqli_query($conn, $q_live);
                                         </thead>
                                         <tbody>
                                             <?php 
-                                            $q_students = "SELECT s.id, s.name as full_name, s.studentid as roll_no, p.prefix_name, es.status as sub_status, es.start_time, es.submission_id
+                                            $q_students = "SELECT s.id, s.name as full_name, s.studentid as symbol_no, p.prefix_name, es.status as sub_status, es.start_time, es.submission_id
                                                            FROM exam_assignments ea
                                                            JOIN students s ON ea.student_id = s.id
                                                            LEFT JOIN student_prefixes p ON s.prefix_id = p.id
@@ -116,7 +116,7 @@ $res_live = mysqli_query($conn, $q_live);
                                                     }
                                             ?>
                                             <tr>
-                                                <td class="ps-3 align-middle"><?= htmlspecialchars(($st['prefix_name'] ?? '') . $st['roll_no']) ?></td>
+                                                <td class="ps-3 align-middle"><?= htmlspecialchars(($st['prefix_name'] ?? '') . $st['symbol_no']) ?></td>
                                                 <td class="align-middle fw-medium"><?= htmlspecialchars($st['full_name']) ?></td>
                                                 <td class="text-center align-middle">
                                                     <?php if($st['start_time']): ?>

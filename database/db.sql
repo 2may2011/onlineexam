@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS settings (
     setting_value TEXT
 );
 
--- 3. Student ID Prefixes
+-- 3. Symbol No Prefixes
 CREATE TABLE IF NOT EXISTS student_prefixes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     prefix_name VARCHAR(50) NOT NULL UNIQUE,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Students (Normalized Student ID + Prefix)
+-- 5. Students (Normalized Symbol No + Prefix)
 CREATE TABLE IF NOT EXISTS students (
     id INT AUTO_INCREMENT PRIMARY KEY,
     prefix_id INT,

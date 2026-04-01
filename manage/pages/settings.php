@@ -205,7 +205,7 @@ if ($res) {
         </div>
     </div>
 
-    <!-- Student ID Prefix Management -->
+    <!-- Symbol No Prefix Management -->
     <div class="col-12 col-xl-5">
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">

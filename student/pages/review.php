@@ -11,7 +11,7 @@ if (!$submission_id) {
 }
 
 // Fetch submission details with strict student ownership check
-$q_sub = "SELECT es.*, e.title as exam_title, e.question_weight,
+$q_sub = "SELECT es.*, e.title as exam_title, e.question_weight, e.passing_marks,
                  (SELECT COUNT(*) FROM questions q WHERE q.bank_id = e.bank_id) as total_qs
           FROM exam_submissions es
           JOIN exams e ON es.exam_id = e.exam_id

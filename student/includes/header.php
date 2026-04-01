@@ -49,10 +49,10 @@
     .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     
     .btn, .nav-link { transition: all 0.2s ease; }
-    .btn-primary { background-color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; border-radius: 8px; font-weight: 600; color: #002583 !important; }
+    .btn-primary { background-color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; border-radius: 8px; font-weight: 600; color: #000 !important; }
     .btn-primary:hover { background-color: #D99E00 !important; border-color: #D99E00 !important; }
     .btn-outline-primary { color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; }
-    .btn-outline-primary:hover { background-color: var(--theme-primary) !important; color: #002583 !important; }
+    .btn-outline-primary:hover { background-color: var(--theme-primary) !important; color: #000 !important; }
     .text-primary { color: var(--theme-primary) !important; }
     .bg-primary { background-color: var(--theme-primary) !important; }
     .badge.bg-primary { background-color: var(--theme-primary) !important; }
@@ -72,6 +72,20 @@
         .app-wrapper { margin-left: 0; width: 100%; }
     }
   </style>
+  <script>
+    // Disable Right-Click
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    // Disable Shortcuts
+    document.onkeydown = function(e) {
+        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+        if (e.keyCode == 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+            (e.ctrlKey && e.keyCode == 85)) {
+            return false;
+        }
+    };
+  </script>
 </head>
 <body>
 

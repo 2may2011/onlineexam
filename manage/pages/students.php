@@ -152,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
                          $body = "
                             <h3>Welcome, {$name}!</h3>
                             <p>Your account has been created successfully.</p>
-                            <p><strong>Student ID:</strong> {$sid_full}</p>
+                            <p><strong>Symbol No:</strong> {$sid_full}</p>
                             <p><strong>Password:</strong> {$plainPass}</p>
                             <br>
                             <div style='text-align: center; margin: 20px 0;'>
@@ -353,7 +353,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-0">Student Directory</h3>
-                    <div class="text-muted small">Administer student profiles, registrations, and IDs</div>
+                    <div class="text-muted small">Administer student profiles, registrations, and Symbol Numbers</div>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-danger d-none" id="btnBulkDelete" onclick="handleBulkDelete()">
@@ -376,7 +376,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label small fw-bold">ID Prefix</label>
+                    <label class="form-label small fw-bold">Symbol Prefix</label>
                     <select name="prefix" class="form-select" onchange="fetchStudents()">
                         <option value="">All Prefixes</option>
                         <?php foreach($all_prefixes as $p): ?>
@@ -581,7 +581,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'ajax_filter') {
                 </select>
                 <input type="text" name="student_id_num" id="edit_sid_num" class="form-control" readonly required>
             </div>
-            <div class="small text-muted mt-1">Numerical ID cannot be changed.</div>
+            <div class="small text-muted mt-1">Numerical Symbol No cannot be changed.</div>
         </div>
         <div class="mb-3">
             <label class="form-label d-block">Gender</label>
