@@ -129,10 +129,10 @@ $timeLeft = $end - time();
     
     // Disable Shortcuts
     document.onkeydown = function(e) {
-        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A, Ctrl+P, Ctrl+S
         if (e.keyCode == 123 || 
             (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
-            (e.ctrlKey && e.keyCode == 85)) {
+            (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 67 || e.keyCode == 86 || e.keyCode == 88 || e.keyCode == 65 || e.keyCode == 80 || e.keyCode == 83))) {
             return false;
         }
     };
