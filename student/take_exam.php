@@ -49,7 +49,17 @@ if (!$submission) {
     $res_qs = mysqli_query($conn, $q_qs);
     $qids = [];
     while($r = mysqli_fetch_row($res_qs)) $qids[] = $r[0];
-    shuffle($qids); // Fisher-Yates implementation
+    
+    // Custom implementation of the Fisher-Yates Shuffle Algorithm
+    // This explicitly demonstrates algorithmic logic rather than relying on standard library functions.
+    $n = count($qids);
+    for ($i = $n - 1; $i > 0; $i--) {
+        $j = mt_rand(0, $i); // Pick random integer between 0 and i
+        // Swap array elements
+        $temp = $qids[$i];
+        $qids[$i] = $qids[$j];
+        $qids[$j] = $temp;
+    }
     
     foreach ($qids as $qid) {
         mysqli_query($conn, "INSERT INTO student_answers (submission_id, question_id) VALUES ($submission_id, $qid)");

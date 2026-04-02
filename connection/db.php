@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";          // change if needed
 $pass = "";              // change if needed
-$db   = "online_exam_portal";
+$db = "online_exam_portal";
 
 $conn = new mysqli($host, $user, $pass, $db);
 
