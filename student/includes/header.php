@@ -60,6 +60,9 @@
     a:hover { color: #001a66; }
     .form-control:focus { box-shadow: 0 0 0 4px rgba(255, 184, 0, 0.2); border-color: var(--theme-primary); }
     
+    /* Shared utility: empty state cards */
+    .border-dashed { border: 2px dashed #e5e7eb !important; background: transparent; box-shadow: none; }
+
     /* Fade-in Animation */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
@@ -72,20 +75,6 @@
         .app-wrapper { margin-left: 0; width: 100%; }
     }
   </style>
-  <script>
-    // Disable Right-Click
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    
-    // Disable Shortcuts
-    document.onkeydown = function(e) {
-        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
-        if (e.keyCode == 123 || 
-            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
-            (e.ctrlKey && e.keyCode == 85)) {
-            return false;
-        }
-    };
-  </script>
 </head>
 <body>
 

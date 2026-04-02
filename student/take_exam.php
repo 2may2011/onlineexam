@@ -43,12 +43,13 @@ if (!$submission) {
     mysqli_query($conn, "INSERT INTO exam_submissions (exam_id, student_id, status) VALUES ($exam_id, $student_id, 'ongoing')");
     $submission_id = mysqli_insert_id($conn);
     
-    // Initialize student_answers with randomized order
+    // --- ALGORITHM 1: FISHER-YATES SHUFFLE ---
+    // Fetch all question IDs and apply PHP's native shuffle to randomize sequence
     $q_qs = "SELECT question_id FROM questions WHERE bank_id = {$exam['bank_id']}";
     $res_qs = mysqli_query($conn, $q_qs);
     $qids = [];
     while($r = mysqli_fetch_row($res_qs)) $qids[] = $r[0];
-    shuffle($qids);
+    shuffle($qids); // Fisher-Yates implementation
     
     foreach ($qids as $qid) {
         mysqli_query($conn, "INSERT INTO student_answers (submission_id, question_id) VALUES ($submission_id, $qid)");
@@ -66,8 +67,8 @@ $q_data = "SELECT sa.question_id, sa.selected_option, q.question_text, q.option_
 $res_data = mysqli_query($conn, $q_data);
 $questions = [];
 while($row = mysqli_fetch_assoc($res_data)) {
-    // Randomize options order per question for this student session
-    // Use a deterministic hash-based sort to keep it stable and global-state safe
+    // --- ALGORITHM 2: DETERMINISTIC HASH-BASED SORTING ---
+    // Randomize options order per question for this student session safely
     $seed = (string)$submission_id . (string)$row['question_id'];
     $opts = [
         ['key' => 'A', 'val' => $row['option_a']],
@@ -75,6 +76,7 @@ while($row = mysqli_fetch_assoc($res_data)) {
         ['key' => 'C', 'val' => $row['option_c']],
         ['key' => 'D', 'val' => $row['option_d']]
     ];
+    // Uses MD5 hash comparison to reliably sort options without state-loss on refresh
     usort($opts, function($a, $b) use ($seed) {
         return strcmp(md5($seed . $a['key']), md5($seed . $b['key']));
     });
@@ -299,6 +301,7 @@ $timeLeft = $end - time();
     const warningKey = 'exam_warnings_<?= $submission_id ?>';
     let warningCount = parseInt(localStorage.getItem(warningKey) || '0', 10);
     
+    // --- ALGORITHM 4: CLIENT-SIDE FINITE STATE MACHINE (ANTI-CHEAT) ---
     // Initial display
     warningDisplayEl.textContent = `${warningCount} / 3`;
 

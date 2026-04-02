@@ -60,6 +60,5 @@ $res_exams = mysqli_query($conn, $q_exams);
 </div>
 
 <style>
-    .border-dashed { border: 2px dashed #e5e7eb; background: transparent; box-shadow: none; }
     .bg-primary-subtle { background: rgba(13, 110, 253, 0.1) !important; }
 </style>

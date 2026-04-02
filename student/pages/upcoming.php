@@ -57,6 +57,5 @@ if (!$res_exams) {
 </div>
 
 <style>
-    .border-dashed { border: 2px dashed #e5e7eb; background: transparent; box-shadow: none; }
     .bg-info-subtle { background: rgba(13, 202, 240, 0.1) !important; color: #0dcaf0; }
 </style>

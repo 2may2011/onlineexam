@@ -23,7 +23,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $res = $stmt->get_result();
         
         if ($student = $res->fetch_assoc()) {
-            // 2. Generate new password
             // 2. Generate new password (8 chars, 1 upper, 1 lower, 1 number)
             $u = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             $l = "abcdefghijklmnopqrstuvwxyz";
