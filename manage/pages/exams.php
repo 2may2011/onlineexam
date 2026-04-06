@@ -21,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_exam'])) {
     if ($passing_marks < 0) { header("Location: index.php?view=exams&error=Passing marks cannot be negative"); exit; }
     if ($weight < 0) { header("Location: index.php?view=exams&error=Question weight cannot be negative"); exit; }
     if ($negative < 0) { header("Location: index.php?view=exams&error=Negative marking cannot be negative"); exit; }
+    if ($negative > $weight) { header("Location: index.php?view=exams&error=Negative marking cannot exceed Weight/Question ($weight)"); exit; }
     
     // Future date validation: Exam start time must always be ahead of current server time
     if (strtotime($start_time) < time()) {
@@ -352,6 +353,7 @@ if ($banks_res) while($b = mysqli_fetch_assoc($banks_res)) $banks[] = $b;
                 <label class="form-label fw-bold">Negative Marking</label>
                 <input type="number" step="0.1" name="negative_marking" id="exam_neg" class="form-control" value="0.0" min="0" required>
                 <div id="err_neg" class="text-danger small mt-1" style="display:none;">Must be at least 0</div>
+                <div id="err_neg_limit" class="text-danger small mt-1" style="display:none;">Cannot exceed Weight/Question (<span id="neg_max_limit">0</span>)</div>
             </div>
         </div>
       </div>
@@ -571,6 +573,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const plErr = document.getElementById('err_pass_limit');
         const wErr = document.getElementById('err_weight');
         const nErr = document.getElementById('err_neg');
+        const nlErr = document.getElementById('err_neg_limit');
+        const negMaxLimit = document.getElementById('neg_max_limit');
 
         if(dErr) dErr.style.display = (isNaN(duration) || duration >= 1) ? 'none' : 'block';
         if(pErr) pErr.style.display = (isNaN(pass) || pass >= 1) ? 'none' : 'block';
@@ -581,6 +585,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if(wErr) wErr.style.display = (isNaN(weight) || weight >= 1) ? 'none' : 'block';
         if(nErr) nErr.style.display = (isNaN(neg) || neg >= 0) ? 'none' : 'block';
 
+        // Negative marking cannot exceed weight/question
+        const isNegOverWeight = (!isNaN(neg) && !isNaN(weight) && neg > weight);
+        if(negMaxLimit) negMaxLimit.textContent = isNaN(weight) ? '0' : weight;
+        if(nlErr) nlErr.style.display = isNegOverWeight ? 'block' : 'none';
+
         // Basic required check
         let isValid = title && bank && start && !isNaN(duration) && !isNaN(pass) && !isNaN(weight) && !isNaN(neg);
 
@@ -590,6 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isPassOverLimit) isValid = false;
         if (weight < 1) isValid = false;
         if (neg < 0) isValid = false;
+        if (isNegOverWeight) isValid = false;
 
         if(btnSaveExam) {
             btnSaveExam.disabled = !isValid;
