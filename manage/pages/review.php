@@ -27,7 +27,7 @@ if (!$sub) {
 }
 
 // Fetch all answers with question data
-$q_ans = "SELECT sa.*, q.question_text, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer
+$q_ans = "SELECT sa.*, q.question_text, q.image_path, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer
           FROM student_answers sa
           JOIN questions q ON sa.question_id = q.question_id
           WHERE sa.submission_id = $submission_id
@@ -107,6 +107,11 @@ $is_passed = ($obt_score >= (float)($sub['passing_marks'] ?? 0));
                             <td class="ps-4 fw-bold text-muted"><?= $q_num++ ?>.</td>
                             <td>
                                 <div class="fw-medium mb-1 text-dark"><?= htmlspecialchars($a['question_text']) ?></div>
+                                <?php if(!empty($a['image_path'])): ?>
+                                <div class="mb-2">
+                                    <img src="../uploads/questions/<?= htmlspecialchars($a['image_path']) ?>" alt="Question Image" style="max-height: 120px; border-radius: 6px;" class="border p-1 shadow-sm">
+                                </div>
+                                <?php endif; ?>
                                 <div class="row g-2 mt-1">
                                     <?php 
                                     $opts = ['A' => $a['option_a'], 'B' => $a['option_b'], 'C' => $a['option_c'], 'D' => $a['option_d']];

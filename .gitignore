@@ -9,3 +9,11 @@ Thumbs.db
 # Dependencies
 /vendor/
 /node_modules/
+
+# Uploads (user-generated files)
+/uploads/questions/
+
+# Project docs
+project.md
+algorithms*.md
+admininsert.php

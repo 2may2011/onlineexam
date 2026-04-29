@@ -69,7 +69,7 @@ if (!$submission) {
 }
 
 // 4. Fetch Randomized Questions for this student
-$q_data = "SELECT sa.question_id, sa.selected_option, q.question_text, q.option_a, q.option_b, q.option_c, q.option_d 
+$q_data = "SELECT sa.question_id, sa.selected_option, q.question_text, q.image_path, q.option_a, q.option_b, q.option_c, q.option_d 
            FROM student_answers sa 
            JOIN questions q ON sa.question_id = q.question_id 
            WHERE sa.submission_id = $submission_id
@@ -197,6 +197,11 @@ $timeLeft = $end - time();
                         <span class="badge bg-primary rounded-pill px-2 py-1 mt-1" style="font-size: 0.75rem;">Q <?= $idx + 1 ?></span>
                         <div class="fw-bold" style="font-size: 1.05rem;"><?= nl2br(htmlspecialchars($q['question_text'])) ?></div>
                     </div>
+                    <?php if(!empty($q['image_path'])): ?>
+                    <div class="mb-4 ps-md-4">
+                        <img src="../uploads/questions/<?= htmlspecialchars($q['image_path']) ?>" alt="Question Image" style="max-height: 250px; border-radius: 8px;" class="border p-1 shadow-sm">
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="row g-2 ps-md-4">
                         <?php foreach ($q['shuffled_options'] as $oIdx => $opt): 

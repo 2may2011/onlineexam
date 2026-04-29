@@ -33,6 +33,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_bank'])) {
 // Handle Delete Bank
 if (isset($_GET['delete_bank'])) {
     $bank_id = (int)$_GET['delete_bank'];
+    
+    // Delete associated images
+    $imgRes = mysqli_query($conn, "SELECT image_path FROM questions WHERE bank_id=$bank_id AND image_path IS NOT NULL");
+    while ($r = mysqli_fetch_assoc($imgRes)) {
+        $path = __DIR__ . '/../../uploads/questions/' . $r['image_path'];
+        if (file_exists($path)) unlink($path);
+    }
+
     if (mysqli_query($conn, "DELETE FROM question_banks WHERE bank_id=$bank_id")) {
         header("Location: index.php?view=questions&tab=banks&success=Bank deleted");
         exit;
@@ -43,8 +51,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_question'])) {
     $bank_id = (int)$_POST['bank_id'];
     $questions = $_POST['questions'] ?? [];
 
+    // Ensure upload directory exists
+    $upload_dir = __DIR__ . '/../../uploads/questions/';
+    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
     if (!empty($questions)) {
-        foreach ($questions as $q) {
+        foreach ($questions as $idx => $q) {
             $qid = isset($q['id']) ? (int)$q['id'] : 0;
             $q_text = mysqli_real_escape_string($conn, trim($q['text'] ?? ""));
             $opt_a = mysqli_real_escape_string($conn, trim($q['a'] ?? ""));
@@ -52,14 +64,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_question'])) {
             $opt_c = mysqli_real_escape_string($conn, trim($q['c'] ?? ""));
             $opt_d = mysqli_real_escape_string($conn, trim($q['d'] ?? ""));
             $correct = mysqli_real_escape_string($conn, $q['correct'] ?? "");
+            $existing_image = $q['existing_image'] ?? "";
 
             if (!$q_text) continue;
 
+            $image_path = $existing_image;
+
+            // Handle image upload
+            if (isset($_FILES['questions']['name'][$idx]['image']) && $_FILES['questions']['error'][$idx]['image'] === UPLOAD_ERR_OK) {
+                $file_tmp = $_FILES['questions']['tmp_name'][$idx]['image'];
+                $file_name = $_FILES['questions']['name'][$idx]['image'];
+                $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                
+                // Validate extension
+                $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                if (in_array($file_ext, $allowed)) {
+                    $new_file_name = 'ques_' . time() . '_' . rand(1000, 9999) . '.' . $file_ext;
+                    if (move_uploaded_file($file_tmp, $upload_dir . $new_file_name)) {
+                        $image_path = $new_file_name;
+                        // Delete old image if exists
+                        if ($existing_image && file_exists($upload_dir . $existing_image)) {
+                            unlink($upload_dir . $existing_image);
+                        }
+                    }
+                }
+            }
+
+            $img_sql = $image_path ? "'" . mysqli_real_escape_string($conn, $image_path) . "'" : "NULL";
+
             if ($qid > 0) {
-                $query = "UPDATE questions SET bank_id=$bank_id, question_text='$q_text', option_a='$opt_a', option_b='$opt_b', option_c='$opt_c', option_d='$opt_d', correct_answer='$correct' WHERE question_id=$qid";
+                $query = "UPDATE questions SET bank_id=$bank_id, question_text='$q_text', image_path=$img_sql, option_a='$opt_a', option_b='$opt_b', option_c='$opt_c', option_d='$opt_d', correct_answer='$correct' WHERE question_id=$qid";
             } else {
-                $query = "INSERT INTO questions (bank_id, question_text, option_a, option_b, option_c, option_d, correct_answer) 
-                          VALUES ($bank_id, '$q_text', '$opt_a', '$opt_b', '$opt_c', '$opt_d', '$correct')";
+                $query = "INSERT INTO questions (bank_id, question_text, image_path, option_a, option_b, option_c, option_d, correct_answer) 
+                          VALUES ($bank_id, '$q_text', $img_sql, '$opt_a', '$opt_b', '$opt_c', '$opt_d', '$correct')";
             }
             mysqli_query($conn, $query);
         }
@@ -72,6 +109,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_question'])) {
 if (isset($_GET['delete_q'])) {
     $qid = (int)$_GET['delete_q'];
     $bank_id = isset($_GET['bank_id']) ? (int)$_GET['bank_id'] : 0;
+    
+    // Delete image if exists
+    $imgRes = mysqli_query($conn, "SELECT image_path FROM questions WHERE question_id=$qid LIMIT 1");
+    if ($imgRes && mysqli_num_rows($imgRes) > 0) {
+        $r = mysqli_fetch_assoc($imgRes);
+        $path = __DIR__ . '/../../uploads/questions/' . $r['image_path'];
+        if (!empty($r['image_path']) && file_exists($path)) {
+            unlink($path);
+        }
+    }
+
     if (mysqli_query($conn, "DELETE FROM questions WHERE question_id=$qid")) {
         header("Location: index.php?view=questions" . ($bank_id ? "&bank_id=$bank_id" : "") . "&success=Question deleted");
         exit;
@@ -200,6 +248,11 @@ if (!$q_res && !isset($db_error)) {
                   <tr>
                       <td>
                           <div class="fw-bold mb-1 text-dark fs-6"><?= htmlspecialchars($q['question_text']) ?></div>
+                          <?php if(!empty($q['image_path'])): ?>
+                          <div class="mb-2">
+                              <img src="../uploads/questions/<?= htmlspecialchars($q['image_path']) ?>" alt="Question Image" style="max-height: 80px; border-radius: 4px;" class="border p-1 shadow-sm">
+                          </div>
+                          <?php endif; ?>
                           <div class="row g-2 mt-1 small">
                               <div class="col-6 col-md-3"><span class="text-muted fw-semibold">A:</span> <?= htmlspecialchars($q['option_a']) ?></div>
                               <div class="col-6 col-md-3"><span class="text-muted fw-semibold">B:</span> <?= htmlspecialchars($q['option_b']) ?></div>
@@ -267,10 +320,9 @@ if (!$q_res && !isset($db_error)) {
   </div>
 </div>
 
-<!-- QUESTION MODAL (Batch Add/Edit) -->
 <div class="modal fade" id="modalQuestion" tabindex="-1">
   <div class="modal-dialog modal-lg">
-    <form class="modal-content border-0 radius-2 animate__animated animate__fadeInDown" method="POST">
+    <form class="modal-content border-0 radius-2 animate__animated animate__fadeInDown" method="POST" enctype="multipart/form-data">
       <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-center">
         <h5 class="modal-title fw-bold" id="questionModalTitle">Add Questions</h5>
         <button type="button" class="btn btn-sm btn-outline-mustard" id="btnAddQuestionRow" onclick="addQuestionRow()">
@@ -339,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const qid = data ? data.id : '';
         const text = data ? data.text : '';
+        const img = data ? data.img : '';
         const a = data ? data.a : '';
         const b = data ? data.b : '';
         const c = data ? data.c : '';
@@ -347,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         div.innerHTML = `
             <input type="hidden" name="questions[${idx}][id]" value="${qid}">
+            <input type="hidden" name="questions[${idx}][existing_image]" value="${img}">
             <div class="row" style="row-gap: 1.2rem; column-gap: 1.2rem;">
                 <div class="col-12">
                     <div class="d-flex align-items-center" style="gap: 1.2rem;">
@@ -355,6 +409,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             <input type="text" name="questions[${idx}][text]" class="form-control" placeholder="Type question here..." value="${text}" required>
                         </div>
                         ${idx > 0 ? '<button type="button" class="btn-close small" onclick="this.closest(\'.card\').remove()" style="flex-shrink:0"></button>' : ''}
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex align-items-center" style="gap: 1.2rem;">
+                        <div class="input-group">
+                            <span class="input-group-text border-0 text-white bg-sidebar" style="min-width: 90px;">Image (Opt)</span>
+                            <input type="file" name="questions[${idx}][image]" class="form-control" accept="image/*" onchange="previewImg(this, ${idx})">
+                        </div>
+                    </div>
+                    <div id="preview_${idx}" class="mt-2 ${img ? '' : 'd-none'}">
+                        <img src="${img ? '../uploads/questions/' + img : ''}" style="max-height: 100px; border-radius: 6px;" class="border p-1 shadow-sm">
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -399,6 +464,18 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(div);
     };
 
+    window.previewImg = function(input, idx) {
+        const previewDiv = document.getElementById('preview_' + idx);
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewDiv.innerHTML = '<img src="'+e.target.result+'" style="max-height: 100px; border-radius: 6px;" class="border p-1 shadow-sm">';
+                previewDiv.classList.remove('d-none');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
     window.openAddQuestionModal = function() {
         document.getElementById('questionModalTitle').textContent = "Add Questions";
         document.getElementById('btnAddQuestionRow').style.display = 'block';
@@ -416,6 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.addQuestionRow({
             id: q.question_id,
             text: q.question_text,
+            img: q.image_path,
             a: q.option_a,
             b: q.option_b,
             c: q.option_c,

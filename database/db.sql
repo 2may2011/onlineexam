@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS questions (
     question_id INT AUTO_INCREMENT PRIMARY KEY,
     bank_id INT NOT NULL,
     question_text TEXT NOT NULL,
+    image_path VARCHAR(255) NULL DEFAULT NULL,
     option_a VARCHAR(255) NOT NULL,
     option_b VARCHAR(255) NOT NULL,
     option_c VARCHAR(255) NOT NULL,
