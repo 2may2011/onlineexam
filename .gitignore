@@ -17,3 +17,6 @@ Thumbs.db
 project.md
 algorithms*.md
 admininsert.php
+
+# Hosting/deployment copy (not for version control)
+/hosting/

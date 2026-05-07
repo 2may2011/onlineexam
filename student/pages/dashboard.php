@@ -6,7 +6,8 @@ $student_id = $_SESSION['student_id'];
 $stats = [
     'total_exams' => 0,
     'avg_score' => 0,
-    'ongoing' => 0
+    'ongoing' => 0,
+    'upcoming' => 0
 ];
 
 if (isset($conn)) {
@@ -17,6 +18,14 @@ if (isset($conn)) {
                   AND NOW() BETWEEN e.start_time AND e.end_time";
     $res_ongoing = mysqli_query($conn, $q_ongoing);
     if($res_ongoing) $stats['ongoing'] = mysqli_fetch_row($res_ongoing)[0];
+
+    // Upcoming exams count (assigned but not yet started)
+    $q_upcoming = "SELECT COUNT(*) FROM exams e
+                   JOIN exam_assignments ea ON e.exam_id = ea.exam_id
+                   WHERE ea.student_id = $student_id
+                   AND e.start_time > NOW()";
+    $res_upcoming = mysqli_query($conn, $q_upcoming);
+    if($res_upcoming) $stats['upcoming'] = mysqli_fetch_row($res_upcoming)[0];
 
     // Completed exams (Average of percentages)
     $q_completed = "SELECT COUNT(*), 
@@ -34,21 +43,28 @@ if (isset($conn)) {
 ?>
 
 <div class="row g-4 mb-5">
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
         <div class="card p-4 h-100 bg-gradient-primary">
             <div class="muted small text-white-50">Active Exams</div>
             <div class="fs-1 fw-bold"><?= $stats['ongoing'] ?></div>
             <div class="small mt-2"><i class="bi bi-clock-history me-1"></i> Available right now</div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
+        <div class="card p-4 h-100">
+            <div class="muted small">Upcoming Exams</div>
+            <div class="fs-1 fw-bold"><?= $stats['upcoming'] ?></div>
+            <div class="small mt-2 text-primary"><i class="bi bi-calendar-event me-1"></i> Scheduled ahead</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
         <div class="card p-4 h-100">
             <div class="muted small">Exams Completed</div>
             <div class="fs-1 fw-bold"><?= $stats['total_exams'] ?></div>
             <div class="small mt-2 text-success"><i class="bi bi-check2-all me-1"></i> Great job!</div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
         <div class="card p-4 h-100">
             <div class="muted small">Average Score</div>
             <div class="fs-1 fw-bold"><?= $stats['avg_score'] ?><span class="fs-6 text-muted ms-1">%</span></div>
